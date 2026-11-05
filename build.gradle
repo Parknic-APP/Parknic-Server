@@ -6,7 +6,7 @@ plugins {
 
 group = 'com.seongmo'
 version = '0.0.1-SNAPSHOT'
-description = 'be'
+description = 'parknic'
 
 java {
     toolchain {
