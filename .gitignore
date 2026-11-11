@@ -41,5 +41,3 @@ out/
 !.env.example
 application-local.yaml
 *.p8
-
-CLAUDE.md
