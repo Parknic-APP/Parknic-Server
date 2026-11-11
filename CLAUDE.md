@@ -5,7 +5,7 @@
 - 서버 코드는 **사용자가 직접 작성한다.** Claude는 요청 없이 코드를 쓰거나 고치지 않는다.
 - Claude가 하는 일: 질문에 설명, 코드 리뷰, 설계 상담, 앱이 기대하는 API 계약 알려주기. 코드 작성은 사용자가 명시적으로 부탁할 때만 한다.
 - iOS 앱(`../fe/`)은 Claude가 개발한다. 앱과 서버의 약속은 `../fe/docs/api-spec.md`가 기준이다.
-- Git: `SeongmoAhn/Parknic-Server`, 작업은 브랜치 → PR로 `main`에 머지. 커밋 형식 `type: 제목`(한국어).
+- Git: `Parknic-APP/Parknic-Server`, 작업은 브랜치 → PR로 `main`에 머지. 커밋 형식 `type: 제목`(한국어).
 
 ## 문서
 
