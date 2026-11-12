@@ -1,7 +1,7 @@
 services:
   db:
-    image: postgis/postgis:16-3.4
-    platform: linux/amd64
+    image: postgres:16-alpine
+#    platform: linux/amd64
     container_name: parknic-db
     environment:
       POSTGRES_DB: ${DB_NAME}
