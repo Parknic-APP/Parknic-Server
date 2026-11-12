@@ -3,6 +3,8 @@ spring:
     name: parknic
   profiles:
     default: local
+  jackson:
+    default-property-inclusion: always
   jpa:
     open-in-view: false
     hibernate:
