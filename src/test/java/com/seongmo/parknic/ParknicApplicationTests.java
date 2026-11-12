@@ -1,10 +1,10 @@
 package com.seongmo.parknic;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
 
-@SpringBootTest
-class ParknicApplicationTests {
+import com.seongmo.parknic.support.IntegrationTest;
+
+class ParknicApplicationTests extends IntegrationTest {
 
     @Test
     void contextLoads() {
