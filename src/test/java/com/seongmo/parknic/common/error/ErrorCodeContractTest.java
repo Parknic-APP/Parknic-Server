@@ -21,6 +21,7 @@ class ErrorCodeContractTest {
                 "REVIEW_BADGE_REQUIRED", HttpStatus.FORBIDDEN,
                 "REVIEW_ALREADY_EXISTS", HttpStatus.CONFLICT,
                 "NICKNAME_DUPLICATED", HttpStatus.CONFLICT,
+                "NICKNAME_INAPPROPRIATE", HttpStatus.CONFLICT,
                 "TOKEN_EXPIRED", HttpStatus.UNAUTHORIZED);
 
         contract.forEach((name, status) ->
