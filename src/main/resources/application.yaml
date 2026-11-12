@@ -15,3 +15,8 @@ spring:
           time_zone: UTC
 server:
   shutdown: graceful
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
