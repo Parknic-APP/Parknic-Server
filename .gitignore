@@ -41,6 +41,7 @@ out/
 !.env.example
 application-local.yaml
 *.p8
+pr.md
 
 ### macOS ###
 .DS_Store
