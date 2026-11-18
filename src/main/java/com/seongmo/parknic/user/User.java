@@ -49,4 +49,12 @@ public class User {
     public static User pending(String provider, String providerId, Instant now) {
         return new User(provider, providerId, UserStatus.PENDING, now);
     }
+
+    public void updateProfile(String nickname, Short characterId) {
+        this.nickname = nickname;
+        this.characterId = characterId;
+        if (this.status == UserStatus.PENDING) {
+            this.status = UserStatus.ACTIVE;
+        }
+    }
 }
