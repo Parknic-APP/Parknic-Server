@@ -1,8 +1,12 @@
 package com.seongmo.parknic.user;
 
+import com.seongmo.parknic.character.CharacterRepository;
 import com.seongmo.parknic.common.error.BusinessException;
 import com.seongmo.parknic.common.error.ErrorCode;
+import com.seongmo.parknic.common.time.Kst;
+import com.seongmo.parknic.user.dto.NicknameCheckResponse;
 import com.seongmo.parknic.user.dto.UpdateProfileRequest;
+import com.seongmo.parknic.user.dto.UserProfileResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.NestedExceptionUtils;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -16,6 +20,7 @@ public class UserService {
     private static final String NICKNAME_UNIQUE_CONSTRAINT = "uq_users_nickname";
 
     private final UserRepository userRepository;
+    private final CharacterRepository characterRepository;
 
     @Transactional
     public void updateProfile(Long userId, UpdateProfileRequest request) {
@@ -37,5 +42,28 @@ public class UserService {
             }
             throw e;
         }
+    }
+
+    @Transactional(readOnly = true)
+    public UserProfileResponse getMe(Long userId) {
+        User user = userRepository.findByIdAndStatusNot(userId, UserStatus.DELETED)
+                .orElseThrow(() -> new BusinessException(ErrorCode.UNAUTHORIZED));
+
+        String characterName = user.getCharacterId() == null
+                ? null
+                : characterRepository.findNameById(user.getCharacterId()).orElse(null);
+
+        return new UserProfileResponse(
+                user.getNickname(),
+                user.getCharacterId(),
+                characterName,
+                user.getCreatedAt().atZone(Kst.ZONE).toOffsetDateTime()
+        );
+    }
+
+    @Transactional(readOnly = true)
+    public NicknameCheckResponse checkNickname(Long userId, String nickname) {
+        boolean taken = userRepository.existsByNicknameAndIdNot(nickname, userId);
+        return new NicknameCheckResponse(!taken);
     }
 }
