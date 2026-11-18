@@ -1,5 +1,6 @@
-package com.seongmo.parknic.auth;
+package com.seongmo.parknic.auth.controller;
 
+import com.seongmo.parknic.auth.service.AuthService;
 import com.seongmo.parknic.auth.dto.LoginRequest;
 import com.seongmo.parknic.auth.dto.LoginResponse;
 import jakarta.validation.Valid;

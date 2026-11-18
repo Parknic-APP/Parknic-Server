@@ -1,5 +1,7 @@
-package com.seongmo.parknic.user;
+package com.seongmo.parknic.user.repository;
 
+import com.seongmo.parknic.user.entity.UserStatus;
+import com.seongmo.parknic.user.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;

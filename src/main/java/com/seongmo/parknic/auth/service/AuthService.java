@@ -1,13 +1,14 @@
-package com.seongmo.parknic.auth;
+package com.seongmo.parknic.auth.service;
 
+import com.seongmo.parknic.auth.config.DevLoginProperties;
 import com.seongmo.parknic.auth.dto.LoginRequest;
 import com.seongmo.parknic.auth.dto.LoginResponse;
 import com.seongmo.parknic.common.error.BusinessException;
 import com.seongmo.parknic.common.error.ErrorCode;
 import com.seongmo.parknic.common.security.AccessTokenService;
-import com.seongmo.parknic.user.User;
-import com.seongmo.parknic.user.UserRepository;
-import com.seongmo.parknic.user.UserStatus;
+import com.seongmo.parknic.user.entity.User;
+import com.seongmo.parknic.user.repository.UserRepository;
+import com.seongmo.parknic.user.entity.UserStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
