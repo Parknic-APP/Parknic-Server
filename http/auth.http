@@ -1,0 +1,40 @@
+### 개발용 로그인 (test1) - 응답의 accessToken을 token1로 저장
+### 프로필 저장 전에는 isNewUser: true, 저장한 뒤 다시 실행하면 false여야 한다
+POST {{baseUrl}}/api/auth/login/apple
+Content-Type: application/json
+
+{
+  "token": "dev:{{devLoginKey}}:test1"
+}
+
+> {%
+    client.global.set("token1", response.body.accessToken);
+%}
+
+### 개발용 로그인 (test2) - 응답의 accessToken을 token2로 저장
+POST {{baseUrl}}/api/auth/login/apple
+Content-Type: application/json
+
+{
+  "token": "dev:{{devLoginKey}}:test2"
+}
+
+> {%
+    client.global.set("token2", response.body.accessToken);
+%}
+
+### 토큰이 비어 있으면 400
+POST {{baseUrl}}/api/auth/login/apple
+Content-Type: application/json
+
+{
+  "token": ""
+}
+
+### dev: 로 시작하지 않는 토큰은 401
+POST {{baseUrl}}/api/auth/login/apple
+Content-Type: application/json
+
+{
+  "token": "not-a-dev-token"
+}

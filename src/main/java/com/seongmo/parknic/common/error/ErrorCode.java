@@ -15,7 +15,7 @@ public enum ErrorCode {
     REVIEW_BADGE_REQUIRED(HttpStatus.FORBIDDEN, "배지를 받은 공원에만 리뷰를 쓸 수 있습니다."),
     REVIEW_ALREADY_EXISTS(HttpStatus.CONFLICT, "이미 리뷰를 작성했습니다."),
     NICKNAME_DUPLICATED(HttpStatus.CONFLICT, "이미 사용 중인 닉네임입니다."),
-    NICKNAME_INAPPROPRIATE(HttpStatus.CONFLICT, "사용할 수 없는 닉네임입니다."),
+    NICKNAME_INAPPROPRIATE(HttpStatus.BAD_REQUEST, "사용할 수 없는 닉네임입니다."),
     TOKEN_EXPIRED(HttpStatus.UNAUTHORIZED, "토큰이 만료되었습니다."),
 
     // ----- 공통 -----

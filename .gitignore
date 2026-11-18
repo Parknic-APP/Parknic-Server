@@ -42,6 +42,7 @@ out/
 application-local.yaml
 *.p8
 pr.md
+http-client.private.env.json
 
 ### macOS ###
 .DS_Store
