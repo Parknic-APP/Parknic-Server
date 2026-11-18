@@ -1,0 +1,9 @@
+### auth.http로 로그인한 뒤 실행. test2가 아직 프로필 저장 전(PENDING)이어야 두 번째 요청이 null 값 케이스가 된다
+
+### 내 프로필 조회
+GET {{baseUrl}}/api/users/me
+Authorization: Bearer {{token1}}
+
+### PENDING 프로필 조회 -> 200인데 값이 null로 옴
+GET {{baseUrl}}/api/users/me
+Authorization: Bearer {{token2}}

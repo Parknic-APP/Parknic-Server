@@ -1,0 +1,32 @@
+### 순서: auth.http 로그인 -> profile-update.http에서 test1은 testman1b, test2는 testman2로 저장한 뒤 실행
+
+### 닉네임 확인 (test1) - 남이 쓰는 닉네임이면 available: false (test2가 먼저 testman2를 저장한 상태에서)
+GET {{baseUrl}}/api/users/nickname/check?nickname=testman2
+Authorization: Bearer {{token1}}
+
+### 닉네임 확인 (test1) - 아무도 안 쓰는 닉네임이면 available: true
+GET {{baseUrl}}/api/users/nickname/check?nickname=freenick
+Authorization: Bearer {{token1}}
+
+### 닉네임 확인 (test1) - 내 현재 닉네임이면 available: true (본인은 중복이 아님)
+GET {{baseUrl}}/api/users/nickname/check?nickname=testman1b
+Authorization: Bearer {{token1}}
+
+### 닉네임 확인 - 1글자 -> 400 INVALID_REQUEST
+GET {{baseUrl}}/api/users/nickname/check?nickname=a
+Authorization: Bearer {{token1}}
+
+### 닉네임 확인 - 11글자 -> 400 INVALID_REQUEST
+GET {{baseUrl}}/api/users/nickname/check?nickname=abcdefghijk
+Authorization: Bearer {{token1}}
+
+### 닉네임 확인 - 공백 포함 -> 400 INVALID_REQUEST (%20은 공백)
+GET {{baseUrl}}/api/users/nickname/check?nickname=ab%20cd
+Authorization: Bearer {{token1}}
+
+### 닉네임 확인 - nickname 파라미터 없음 -> 400 INVALID_REQUEST
+GET {{baseUrl}}/api/users/nickname/check
+Authorization: Bearer {{token1}}
+
+### 닉네임 확인 - 토큰 없음 -> 401
+GET {{baseUrl}}/api/users/nickname/check?nickname=freenick
