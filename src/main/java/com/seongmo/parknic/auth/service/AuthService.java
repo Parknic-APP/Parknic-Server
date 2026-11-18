@@ -91,4 +91,9 @@ public class AuthService {
         String refreshToken = issueRefreshToken(user.getId(), current.getFamilyId());
         return new ReissueResponse(accessToken, refreshToken);
     }
+
+    @Transactional
+    public void logout(Long userId) {
+        refreshTokenRepository.deleteByUserId(userId);
+    }
 }
