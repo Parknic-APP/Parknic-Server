@@ -1,0 +1,12 @@
+### 순서: auth.http에서 개발용 로그인(test1)을 먼저 실행해 token1을 만든다
+
+### 캐릭터 목록 -> 200, { characters: [{ id, name }] } 8개, id는 1~8 순서
+GET {{baseUrl}}/api/characters
+Authorization: Bearer {{token1}}
+
+### 캐릭터 목록 - 토큰 없음 -> 401
+GET {{baseUrl}}/api/characters
+
+### 캐릭터 목록 - 잘못된 토큰 -> 401
+GET {{baseUrl}}/api/characters
+Authorization: Bearer not-a-real-token
