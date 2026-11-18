@@ -44,4 +44,8 @@ public class RefreshToken {
     public static RefreshToken issue(Long userId, UUID familyId, String tokenHash, Instant expiresAt) {
         return new RefreshToken(userId, familyId, tokenHash, expiresAt);
     }
+
+    public boolean isExpired(Instant now) {
+        return !expiresAt.isAfter(now);
+    }
 }
