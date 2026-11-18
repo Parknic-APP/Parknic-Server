@@ -14,7 +14,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest
+@WebMvcTest(controllers = JacksonConfigTest.SampleController.class)
 @AutoConfigureMockMvc(addFilters = false)
 @Import(JacksonConfigTest.SampleController.class)
 public class JacksonConfigTest {
