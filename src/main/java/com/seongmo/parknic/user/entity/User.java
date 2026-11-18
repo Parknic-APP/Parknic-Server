@@ -1,4 +1,4 @@
-package com.seongmo.parknic.user;
+package com.seongmo.parknic.user.entity;
 
 import jakarta.persistence.*;
 import lombok.AccessLevel;

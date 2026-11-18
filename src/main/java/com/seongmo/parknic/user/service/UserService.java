@@ -1,12 +1,15 @@
-package com.seongmo.parknic.user;
+package com.seongmo.parknic.user.service;
 
-import com.seongmo.parknic.character.CharacterRepository;
+import com.seongmo.parknic.character.repository.CharacterRepository;
 import com.seongmo.parknic.common.error.BusinessException;
 import com.seongmo.parknic.common.error.ErrorCode;
 import com.seongmo.parknic.common.time.Kst;
+import com.seongmo.parknic.user.entity.UserStatus;
 import com.seongmo.parknic.user.dto.NicknameCheckResponse;
 import com.seongmo.parknic.user.dto.UpdateProfileRequest;
 import com.seongmo.parknic.user.dto.UserProfileResponse;
+import com.seongmo.parknic.user.entity.User;
+import com.seongmo.parknic.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.NestedExceptionUtils;
 import org.springframework.dao.DataIntegrityViolationException;

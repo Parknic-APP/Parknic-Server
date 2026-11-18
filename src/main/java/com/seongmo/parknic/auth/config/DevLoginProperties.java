@@ -1,4 +1,4 @@
-package com.seongmo.parknic.auth;
+package com.seongmo.parknic.auth.config;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.DefaultValue;

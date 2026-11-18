@@ -9,7 +9,32 @@ Content-Type: application/json
 
 > {%
     client.global.set("token1", response.body.accessToken);
+    client.global.set("refreshToken1", response.body.refreshToken);
 %}
+
+### 토큰 재발급 (test1) - 로그인으로 받은 refreshToken1을 보낸다
+### 응답의 새 refreshToken으로 갱신되므로 다시 실행하면 새 토큰으로 계속 재발급된다
+### DB: 옛 행은 used=true, 새 행은 used=false이고 family_id는 같다
+POST {{baseUrl}}/api/auth/reissue
+Content-Type: application/json
+
+{
+  "refreshToken": "{{refreshToken1}}"
+}
+
+> {%
+    client.global.set("oldRefreshToken1", client.global.get("refreshToken1"));
+    client.global.set("token1", response.body.accessToken);
+    client.global.set("refreshToken1", response.body.refreshToken);
+%}
+
+### 재발급 - refreshToken이 비어 있으면 400
+POST {{baseUrl}}/api/auth/reissue
+Content-Type: application/json
+
+{
+  "refreshToken": ""
+}
 
 ### 개발용 로그인 (test2) - 응답의 accessToken을 token2로 저장
 POST {{baseUrl}}/api/auth/login/apple
@@ -37,4 +62,37 @@ Content-Type: application/json
 
 {
   "token": "not-a-dev-token"
+}
+
+### 재발급 - 이미 쓴 토큰(직전 재발급 전의 토큰)을 다시 보내면 401
+### 먼저 위의 재발급을 한 번 실행해 oldRefreshToken1이 생긴 뒤에 실행
+POST {{baseUrl}}/api/auth/reissue
+Content-Type: application/json
+
+{
+  "refreshToken": "{{oldRefreshToken1}}"
+}
+
+### 재발급 - 모르는 토큰이면 401
+POST {{baseUrl}}/api/auth/reissue
+Content-Type: application/json
+
+{
+  "refreshToken": "not-a-real-token"
+}
+
+### 재발급 - 만료된 토큰이면 401 (먼저 DB에서 해당 행의 expires_at을 과거로 바꾸고 최신 refreshToken1로 실행)
+POST {{baseUrl}}/api/auth/reissue
+Content-Type: application/json
+
+{
+  "refreshToken": "{{refreshToken1}}"
+}
+
+### 재발급 - 탈퇴(DELETED) 사용자의 토큰이면 401 (먼저 DB에서 사용자 status를 DELETED로 바꾸고 최신 refreshToken1로 실행)
+POST {{baseUrl}}/api/auth/reissue
+Content-Type: application/json
+
+{
+  "refreshToken": "{{refreshToken1}}"
 }

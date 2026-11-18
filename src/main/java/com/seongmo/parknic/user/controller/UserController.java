@@ -1,6 +1,7 @@
-package com.seongmo.parknic.user;
+package com.seongmo.parknic.user.controller;
 
 import com.seongmo.parknic.common.security.CurrentUserId;
+import com.seongmo.parknic.user.service.UserService;
 import com.seongmo.parknic.user.dto.NicknameCheckResponse;
 import com.seongmo.parknic.user.dto.UpdateProfileRequest;
 import com.seongmo.parknic.user.dto.UserProfileResponse;

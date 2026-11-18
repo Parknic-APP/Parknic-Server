@@ -1,4 +1,4 @@
-package com.seongmo.parknic.character;
+package com.seongmo.parknic.character.repository;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.simple.JdbcClient;
