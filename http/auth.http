@@ -96,3 +96,20 @@ Content-Type: application/json
 {
   "refreshToken": "{{refreshToken1}}"
 }
+
+### 로그아웃 (test1) - 200, DB에서 test1의 refresh_tokens 행이 모두 사라진다
+### 실행한 뒤에는 refreshToken1이 무효가 되므로 다시 쓰려면 위의 로그인을 먼저 실행
+POST {{baseUrl}}/api/auth/logout
+Authorization: Bearer {{token1}}
+
+### 로그아웃 후 재발급 - 로그아웃 전에 받은 refreshToken1을 보내면 401
+### 먼저 위의 로그아웃을 실행한 뒤에 실행
+POST {{baseUrl}}/api/auth/reissue
+Content-Type: application/json
+
+{
+  "refreshToken": "{{refreshToken1}}"
+}
+
+### 로그아웃 - 토큰 없이 호출하면 401
+POST {{baseUrl}}/api/auth/logout
