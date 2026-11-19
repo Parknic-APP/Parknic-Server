@@ -113,3 +113,65 @@ Authorization: Bearer {{token1}}
 
 ### 체크인 취소 - 토큰 없음 -> 401
 POST {{baseUrl}}/api/check-ins/1/cancel
+
+### 체크인 실패 - 위 "현재 세션" 응답의 id를 {id}에 넣는다. 본인의 진행 중 세션 -> 200, DB: status=FAILED, fail_reason, ended_at 채워짐
+### reason은 OUT_OF_RANGE, MIDNIGHT, APP_TERMINATED 중 하나
+POST {{baseUrl}}/api/check-ins/{id}/fail
+Content-Type: application/json
+Authorization: Bearer {{token1}}
+
+{
+  "reason": "OUT_OF_RANGE"
+}
+
+### 체크인 실패 - 이미 끝난 세션을 다시 -> 400 INVALID_REQUEST
+POST {{baseUrl}}/api/check-ins/{id}/fail
+Content-Type: application/json
+Authorization: Bearer {{token1}}
+
+{
+  "reason": "MIDNIGHT"
+}
+
+### 체크인 실패 - 남의 세션(test2로 test1의 id) -> 403 FORBIDDEN
+POST {{baseUrl}}/api/check-ins/{id}/fail
+Content-Type: application/json
+Authorization: Bearer {{token2}}
+
+{
+  "reason": "APP_TERMINATED"
+}
+
+### 체크인 실패 - 없는 세션 -> 404 NOT_FOUND
+POST {{baseUrl}}/api/check-ins/999999/fail
+Content-Type: application/json
+Authorization: Bearer {{token1}}
+
+{
+  "reason": "OUT_OF_RANGE"
+}
+
+### 체크인 실패 - reason 없음 -> 400 INVALID_REQUEST
+POST {{baseUrl}}/api/check-ins/{id}/fail
+Content-Type: application/json
+Authorization: Bearer {{token1}}
+
+{
+}
+
+### 체크인 실패 - 정해진 값이 아닌 reason -> 400 INVALID_REQUEST (500이 아니어야 한다)
+POST {{baseUrl}}/api/check-ins/{id}/fail
+Content-Type: application/json
+Authorization: Bearer {{token1}}
+
+{
+  "reason": "BANANA"
+}
+
+### 체크인 실패 - 토큰 없음 -> 401
+POST {{baseUrl}}/api/check-ins/1/fail
+Content-Type: application/json
+
+{
+  "reason": "OUT_OF_RANGE"
+}
