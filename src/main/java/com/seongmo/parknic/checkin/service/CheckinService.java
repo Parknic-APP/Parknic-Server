@@ -55,4 +55,28 @@ public class CheckinService {
         }
         return CheckinSessionResponse.of(session, park);
     }
+
+    @Transactional(readOnly = true)
+    public CheckinSessionResponse getCurrent(Long userId) {
+        CheckinSession session = checkinSessionRepository
+                .findByUserIdAndStatus(userId, CheckinStatus.IN_PROGRESS)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
+        // 세션의 parkId는 FK라 공원이 없을 수 있다. 없다면 데이터 이상이르모 500으로 드러나게 함
+        Park park = parkRepository.findById(session.getParkId())
+                .orElseThrow(() -> new IllegalStateException("세션의 공원이 없음 sessionId = " + session.getId()));
+        return CheckinSessionResponse.of(session, park);
+    }
+
+    @Transactional
+    public void cancel(Long userId, Long sessionId) {
+        CheckinSession session = checkinSessionRepository.findById(sessionId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
+        if (!session.getUserId().equals(userId)) {
+            throw new BusinessException(ErrorCode.FORBIDDEN);
+        }
+        if (session.getStatus() != CheckinStatus.IN_PROGRESS) {
+            throw new BusinessException(ErrorCode.INVALID_REQUEST);
+        }
+        session.cancel(clock.instant());
+    }
 }

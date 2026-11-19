@@ -30,6 +30,9 @@ public class CheckinSession {
     @Column(name = "started_at", nullable = false)
     private Instant startedAt;
 
+    @Column(name = "ended_at")
+    private Instant endedAt;
+
     private CheckinSession(Long userId, Long parkId, Instant startedAt) {
         this.userId = userId;
         this.parkId = parkId;
@@ -39,5 +42,10 @@ public class CheckinSession {
 
     public static CheckinSession start(Long userId, Long parkId, Instant now) {
         return new CheckinSession(userId, parkId, now);
+    }
+
+    public void cancel(Instant now) {
+        this.status = CheckinStatus.CANCELED;
+        this.endedAt = now;
     }
 }
