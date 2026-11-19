@@ -58,4 +58,9 @@ public class CheckinSession {
         this.failReason = reason;
         this.endedAt = now;
     }
+
+    public void complete(Instant now) {
+        this.status = CheckinStatus.COMPLETED;
+        this.endedAt = now;
+    }
 }

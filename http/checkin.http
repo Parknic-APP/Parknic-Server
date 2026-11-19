@@ -175,3 +175,122 @@ Content-Type: application/json
 {
   "reason": "OUT_OF_RANGE"
 }
+
+### ===== 체크인 완료 (complete) =====
+### 실제로는 요구 시간(기본 1200초, 로컬 60초)이 지나야 한다. 시나리오에서는 DB에서 started_at을 앞당겨 확인한다
+###   update checkin_sessions set started_at = now() - interval '1260 seconds' where id = {id};
+### 시작한 세션 id를 {id}에 넣는다
+
+### 체크인 완료 - 시작 직후(요구 시간 전) -> 400 CHECKIN_TOO_EARLY, 세션은 IN_PROGRESS 그대로
+POST {{baseUrl}}/api/check-ins/{id}/complete
+Content-Type: application/json
+Authorization: Bearer {{token1}}
+
+{
+  "lat": 37.517396,
+  "lng": 126.983984,
+  "pausedSeconds": 0
+}
+
+### 체크인 완료 - pausedSeconds가 음수 -> 400 INVALID_REQUEST
+POST {{baseUrl}}/api/check-ins/{id}/complete
+Content-Type: application/json
+Authorization: Bearer {{token1}}
+
+{
+  "lat": 37.517396,
+  "lng": 126.983984,
+  "pausedSeconds": -1
+}
+
+### 체크인 완료 - pausedSeconds가 경과 시간보다 큼 -> 400 INVALID_REQUEST
+POST {{baseUrl}}/api/check-ins/{id}/complete
+Content-Type: application/json
+Authorization: Bearer {{token1}}
+
+{
+  "lat": 37.517396,
+  "lng": 126.983984,
+  "pausedSeconds": 99999
+}
+
+### 체크인 완료 - 일시정지를 빼면 체류 시간이 모자람 -> 400 CHECKIN_TOO_EARLY
+POST {{baseUrl}}/api/check-ins/{id}/complete
+Content-Type: application/json
+Authorization: Bearer {{token1}}
+
+{
+  "lat": 37.517396,
+  "lng": 126.983984,
+  "pausedSeconds": 1250
+}
+
+### 체크인 완료 - 반경 밖 좌표 -> 400 CHECKIN_OUT_OF_RANGE
+POST {{baseUrl}}/api/check-ins/{id}/complete
+Content-Type: application/json
+Authorization: Bearer {{token1}}
+
+{
+  "lat": 37.527396,
+  "lng": 126.983984,
+  "pausedSeconds": 0
+}
+
+### 체크인 완료 - 정상 (started_at을 앞당긴 뒤) -> 200 { badge, newAchievements, weeklyRanking, canWriteReview }
+### DB: badges 행 1개, 세션 COMPLETED, ended_at 채워짐
+POST {{baseUrl}}/api/check-ins/{id}/complete
+Content-Type: application/json
+Authorization: Bearer {{token1}}
+
+{
+  "lat": 37.517396,
+  "lng": 126.983984,
+  "pausedSeconds": 0
+}
+
+### 체크인 완료 - 이미 완료한 세션을 다시 -> 400 INVALID_REQUEST
+POST {{baseUrl}}/api/check-ins/{id}/complete
+Content-Type: application/json
+Authorization: Bearer {{token1}}
+
+{
+  "pausedSeconds": 0
+}
+
+### 체크인 시작 - 오늘 이미 배지를 받은 공원 -> 409 BADGE_ALREADY_EARNED_TODAY
+POST {{baseUrl}}/api/check-ins
+Content-Type: application/json
+Authorization: Bearer {{token1}}
+
+{
+  "parkId": 33,
+  "lat": 37.517396,
+  "lng": 126.983984
+}
+
+### 체크인 완료 - 좌표를 생략하면 반경 검사 없이 통과 -> 200 (다른 사용자 token2의 세션)
+POST {{baseUrl}}/api/check-ins/{id}/complete
+Content-Type: application/json
+Authorization: Bearer {{token2}}
+
+{
+  "pausedSeconds": 0
+}
+
+### 체크인 완료 - 날짜(KST)가 바뀐 세션 -> 400 CHECKIN_EXPIRED_MIDNIGHT
+### started_at을 어제로 바꾼다: update checkin_sessions set started_at = date_trunc('day', now() at time zone 'Asia/Seoul') at time zone 'Asia/Seoul' - interval '10 minutes' where id = {id};
+POST {{baseUrl}}/api/check-ins/{id}/complete
+Content-Type: application/json
+Authorization: Bearer {{token1}}
+
+{
+  "pausedSeconds": 0
+}
+
+### 체크인 완료 - 토큰 없음 -> 401
+POST {{baseUrl}}/api/check-ins/1/complete
+Content-Type: application/json
+
+{
+  "pausedSeconds": 0
+}
