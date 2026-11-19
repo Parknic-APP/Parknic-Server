@@ -30,3 +30,11 @@ Authorization: Bearer {{token1}}
 
 ### 닉네임 확인 - 토큰 없음 -> 401
 GET {{baseUrl}}/api/users/nickname/check?nickname=freenick
+
+### 닉네임 확인 - 금지어 포함 -> 400 NICKNAME_INAPPROPRIATE
+GET {{baseUrl}}/api/users/nickname/check?nickname=시발이
+Authorization: Bearer {{token1}}
+
+### 닉네임 확인 - 영문 금지어는 대소문자 구분 없이 -> 400 NICKNAME_INAPPROPRIATE
+GET {{baseUrl}}/api/users/nickname/check?nickname=FuckYou
+Authorization: Bearer {{token1}}

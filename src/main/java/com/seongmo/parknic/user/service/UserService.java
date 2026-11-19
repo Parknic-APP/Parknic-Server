@@ -24,11 +24,16 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final CharacterRepository characterRepository;
+    private final NicknameFilter nicknameFilter;
 
     @Transactional
     public void updateProfile(Long userId, UpdateProfileRequest request) {
         User user = userRepository.findByIdAndStatusNot(userId, UserStatus.DELETED)
                 .orElseThrow(() -> new BusinessException(ErrorCode.UNAUTHORIZED));
+
+        if (nicknameFilter.isInappropriate(request.nickname())) {
+            throw new BusinessException(ErrorCode.NICKNAME_INAPPROPRIATE);
+        }
 
         if (userRepository.existsByNicknameAndIdNot(request.nickname(), userId)) {
             throw new BusinessException(ErrorCode.NICKNAME_DUPLICATED);
@@ -66,6 +71,10 @@ public class UserService {
 
     @Transactional(readOnly = true)
     public NicknameCheckResponse checkNickname(Long userId, String nickname) {
+        if (nicknameFilter.isInappropriate(nickname)) {
+            throw new BusinessException(ErrorCode.NICKNAME_INAPPROPRIATE);
+        }
+
         boolean taken = userRepository.existsByNicknameAndIdNot(nickname, userId);
         return new NicknameCheckResponse(!taken);
     }
