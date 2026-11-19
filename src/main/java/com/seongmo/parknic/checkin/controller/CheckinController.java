@@ -6,10 +6,7 @@ import com.seongmo.parknic.checkin.service.CheckinService;
 import com.seongmo.parknic.common.security.CurrentUserId;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/check-ins")
@@ -22,5 +19,15 @@ public class CheckinController {
     public CheckinSessionResponse start(@CurrentUserId Long userId,
                                         @Valid @RequestBody StartCheckinRequest request) {
         return checkinService.start(userId, request);
+    }
+
+    @GetMapping("/current")
+    public CheckinSessionResponse getCurrent(@CurrentUserId Long userId) {
+        return checkinService.getCurrent(userId);
+    }
+
+    @PostMapping("/{sessionId}/cancel")
+    public void cancel(@CurrentUserId Long userId, @PathVariable Long sessionId) {
+        checkinService.cancel(userId, sessionId);
     }
 }
