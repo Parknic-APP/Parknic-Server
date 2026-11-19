@@ -1,5 +1,6 @@
 ### 순서: auth.http에서 개발용 로그인(test1)을 먼저 실행해 token1을 만든다
-### 테스트 공원은 DB에 직접 넣는다: manage_no가 TEST-1, TEST-2인 행 (id는 DB가 정함, 아래는 1과 2라고 가정)
+### 공원 상세 시나리오의 id(1, 2)는 예시다. 공원은 CSV 적재(park import)로 들어가 있으므로 id가 다르면 DB에서 실제 id를 확인해 바꾼다
+### 주변 공원 시나리오는 CSV 적재가 되어 있어야 한다
 
 ### 공원 상세 - 존재하는 공원 -> 200, 11개 필드. averageRating은 null, reviewCount 0, myStatus NONE, myBadgeCount 0 (고정값)
 GET {{baseUrl}}/api/parks/1
@@ -19,3 +20,34 @@ Authorization: Bearer {{token1}}
 
 ### 공원 상세 - 토큰 없음 -> 401
 GET {{baseUrl}}/api/parks/1
+
+### 주변 공원 - 보라매공원 근처, 기본 반경 1000 -> 200, 가까운 순, distanceM 오름차순, 최대 200곳
+GET {{baseUrl}}/api/parks/nearby?lat=37.4934&lng=126.9183
+Authorization: Bearer {{token1}}
+
+### 주변 공원 - 반경 300 -> 항목이 줄고 모든 distanceM이 300 이하
+GET {{baseUrl}}/api/parks/nearby?lat=37.4934&lng=126.9183&radius=300
+Authorization: Bearer {{token1}}
+
+### 주변 공원 - radius=1 -> 100으로 맞춰서 처리 (오류 아님)
+GET {{baseUrl}}/api/parks/nearby?lat=37.4934&lng=126.9183&radius=1
+Authorization: Bearer {{token1}}
+
+### 주변 공원 - radius=99999 -> 5000으로 맞춰서 처리, 최대 200곳
+GET {{baseUrl}}/api/parks/nearby?lat=37.4934&lng=126.9183&radius=99999
+Authorization: Bearer {{token1}}
+
+### 주변 공원 - 공원이 없는 바다 한가운데 -> 200, parks: []
+GET {{baseUrl}}/api/parks/nearby?lat=34.0&lng=125.0
+Authorization: Bearer {{token1}}
+
+### 주변 공원 - lat 없음 -> 400 INVALID_REQUEST
+GET {{baseUrl}}/api/parks/nearby?lng=126.9183
+Authorization: Bearer {{token1}}
+
+### 주변 공원 - 숫자가 아닌 lat -> 400 INVALID_REQUEST
+GET {{baseUrl}}/api/parks/nearby?lat=abc&lng=126.9183
+Authorization: Bearer {{token1}}
+
+### 주변 공원 - 토큰 없음 -> 401
+GET {{baseUrl}}/api/parks/nearby?lat=37.4934&lng=126.9183
