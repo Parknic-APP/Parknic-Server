@@ -37,4 +37,10 @@ public class UserController {
             @RequestParam @Pattern(regexp = "^\\S{2,10}$") String nickname) {
         return userService.checkNickname(userId, nickname);
     }
+
+    @DeleteMapping("/me")
+    public void withdraw(@CurrentUserId Long userId) {
+        userService.withdraw(userId);
+        log.info("회원 탈퇴 userId={}", userId);
+    }
 }

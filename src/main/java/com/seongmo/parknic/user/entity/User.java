@@ -57,4 +57,10 @@ public class User {
             this.status = UserStatus.ACTIVE;
         }
     }
+
+    public void withdraw() {
+        this.status = UserStatus.DELETED;
+        this.nickname = null;
+        this.appleRefreshToken = null;
+    }
 }
