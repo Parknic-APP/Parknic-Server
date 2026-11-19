@@ -25,3 +25,5 @@ parknic:
     secret: ${JWT_SECRET:}
   dev-login:
     enabled: false
+  checkin:
+    required-seconds: 1200
