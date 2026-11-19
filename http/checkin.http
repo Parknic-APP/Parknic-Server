@@ -1,0 +1,89 @@
+### 순서: auth.http에서 개발용 로그인(test1, test2)을 먼저 실행해 token1, token2를 만든다
+### 공원 33(동빙고공원, 위도 37.517396, 경도 126.983984, 반경 133m)을 쓴다. 공원 id가 다르면 DB에서 실제 id와 좌표로 바꾼다
+### 같은 사용자로 위에서 아래로 실행하면 두 번째부터 409가 나온다. 다시 하려면 DB에서 해당 사용자의 IN_PROGRESS 행을 지운다
+
+### 체크인 시작 (test1) - 반경 안 -> 200, 세션 { id, parkId, parkName, latitude, longitude, radiusM, startedAt(+09:00) }
+POST {{baseUrl}}/api/check-ins
+Content-Type: application/json
+Authorization: Bearer {{token1}}
+
+{
+  "parkId": 33,
+  "lat": 37.517396,
+  "lng": 126.983984
+}
+
+### 체크인 시작 (test1) - 진행 중 세션이 있는데 다시 -> 409 CHECKIN_ALREADY_IN_PROGRESS
+POST {{baseUrl}}/api/check-ins
+Content-Type: application/json
+Authorization: Bearer {{token1}}
+
+{
+  "parkId": 33,
+  "lat": 37.517396,
+  "lng": 126.983984
+}
+
+### 체크인 시작 (test2) - 반경 밖(약 1.1km 떨어진 곳) -> 400 CHECKIN_OUT_OF_RANGE, DB에 행이 생기지 않는다
+POST {{baseUrl}}/api/check-ins
+Content-Type: application/json
+Authorization: Bearer {{token2}}
+
+{
+  "parkId": 33,
+  "lat": 37.527396,
+  "lng": 126.983984
+}
+
+### 체크인 시작 (test1) - 진행 중 세션이 있어도 반경 밖이면 반경 검사가 먼저 -> 400 CHECKIN_OUT_OF_RANGE
+POST {{baseUrl}}/api/check-ins
+Content-Type: application/json
+Authorization: Bearer {{token1}}
+
+{
+  "parkId": 33,
+  "lat": 37.527396,
+  "lng": 126.983984
+}
+
+### 체크인 시작 - 없는 공원 -> 404 NOT_FOUND
+POST {{baseUrl}}/api/check-ins
+Content-Type: application/json
+Authorization: Bearer {{token2}}
+
+{
+  "parkId": 999999,
+  "lat": 37.517396,
+  "lng": 126.983984
+}
+
+### 체크인 시작 - parkId 없음 -> 400 INVALID_REQUEST
+POST {{baseUrl}}/api/check-ins
+Content-Type: application/json
+Authorization: Bearer {{token2}}
+
+{
+  "lat": 37.517396,
+  "lng": 126.983984
+}
+
+### 체크인 시작 - 위도 범위 밖(91) -> 400 INVALID_REQUEST
+POST {{baseUrl}}/api/check-ins
+Content-Type: application/json
+Authorization: Bearer {{token2}}
+
+{
+  "parkId": 33,
+  "lat": 91,
+  "lng": 126.983984
+}
+
+### 체크인 시작 - 토큰 없음 -> 401
+POST {{baseUrl}}/api/check-ins
+Content-Type: application/json
+
+{
+  "parkId": 33,
+  "lat": 37.517396,
+  "lng": 126.983984
+}
