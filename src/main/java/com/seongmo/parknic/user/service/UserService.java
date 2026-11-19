@@ -1,5 +1,7 @@
 package com.seongmo.parknic.user.service;
 
+import com.seongmo.parknic.auth.repository.RefreshTokenRepository;
+import com.seongmo.parknic.auth.service.AuthService;
 import com.seongmo.parknic.character.repository.CharacterRepository;
 import com.seongmo.parknic.common.error.BusinessException;
 import com.seongmo.parknic.common.error.ErrorCode;
@@ -25,6 +27,7 @@ public class UserService {
     private final UserRepository userRepository;
     private final CharacterRepository characterRepository;
     private final NicknameFilter nicknameFilter;
+    private final AuthService authService;
 
     @Transactional
     public void updateProfile(Long userId, UpdateProfileRequest request) {
@@ -77,5 +80,14 @@ public class UserService {
 
         boolean taken = userRepository.existsByNicknameAndIdNot(nickname, userId);
         return new NicknameCheckResponse(!taken);
+    }
+
+    @Transactional
+    public void withdraw(Long userId) {
+        User user = userRepository.findByIdAndStatusNot(userId, UserStatus.DELETED)
+                .orElseThrow(() -> new BusinessException(ErrorCode.UNAUTHORIZED));
+
+        authService.logout(userId);
+        user.withdraw();
     }
 }
