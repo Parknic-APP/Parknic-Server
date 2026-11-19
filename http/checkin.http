@@ -87,3 +87,29 @@ Content-Type: application/json
   "lat": 37.517396,
   "lng": 126.983984
 }
+
+### 현재 세션 (test1) - 진행 중이면 200, 시작 응답과 같은 형식. 진행 중이 없으면 404 NOT_FOUND
+GET {{baseUrl}}/api/check-ins/current
+Authorization: Bearer {{token1}}
+
+### 현재 세션 - 토큰 없음 -> 401
+GET {{baseUrl}}/api/check-ins/current
+
+### 체크인 취소 - 위 "현재 세션" 응답의 id를 {id}에 넣는다. 본인의 진행 중 세션 -> 200, DB: status=CANCELED, ended_at 채워짐
+POST {{baseUrl}}/api/check-ins/{id}/cancel
+Authorization: Bearer {{token1}}
+
+### 체크인 취소 - 이미 취소한 세션을 다시 -> 400 INVALID_REQUEST
+POST {{baseUrl}}/api/check-ins/{id}/cancel
+Authorization: Bearer {{token1}}
+
+### 체크인 취소 - 남의 세션(test2로 test1의 id를 취소) -> 403 FORBIDDEN, 그 세션은 IN_PROGRESS 그대로
+POST {{baseUrl}}/api/check-ins/{id}/cancel
+Authorization: Bearer {{token2}}
+
+### 체크인 취소 - 없는 세션 -> 404 NOT_FOUND
+POST {{baseUrl}}/api/check-ins/999999/cancel
+Authorization: Bearer {{token1}}
+
+### 체크인 취소 - 토큰 없음 -> 401
+POST {{baseUrl}}/api/check-ins/1/cancel
