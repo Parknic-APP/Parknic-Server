@@ -1,6 +1,7 @@
 package com.seongmo.parknic.checkin.controller;
 
 import com.seongmo.parknic.checkin.dto.CheckinSessionResponse;
+import com.seongmo.parknic.checkin.dto.FailCheckinRequest;
 import com.seongmo.parknic.checkin.dto.StartCheckinRequest;
 import com.seongmo.parknic.checkin.service.CheckinService;
 import com.seongmo.parknic.common.security.CurrentUserId;
@@ -29,5 +30,10 @@ public class CheckinController {
     @PostMapping("/{sessionId}/cancel")
     public void cancel(@CurrentUserId Long userId, @PathVariable Long sessionId) {
         checkinService.cancel(userId, sessionId);
+    }
+
+    @PostMapping("/{sessionId}/fail")
+    public void fail(@CurrentUserId Long userId, @PathVariable Long sessionId, @Valid @RequestBody FailCheckinRequest request) {
+        checkinService.fail(userId, sessionId, request);
     }
 }

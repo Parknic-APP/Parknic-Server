@@ -1,6 +1,7 @@
 package com.seongmo.parknic.checkin.service;
 
 import com.seongmo.parknic.checkin.dto.CheckinSessionResponse;
+import com.seongmo.parknic.checkin.dto.FailCheckinRequest;
 import com.seongmo.parknic.checkin.dto.StartCheckinRequest;
 import com.seongmo.parknic.checkin.entity.CheckinSession;
 import com.seongmo.parknic.checkin.entity.CheckinStatus;
@@ -61,7 +62,7 @@ public class CheckinService {
         CheckinSession session = checkinSessionRepository
                 .findByUserIdAndStatus(userId, CheckinStatus.IN_PROGRESS)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
-        // 세션의 parkId는 FK라 공원이 없을 수 있다. 없다면 데이터 이상이르모 500으로 드러나게 함
+        // 세션의 parkId는 FK라 공원이 없을 수 있음. 없다면 데이터 이상이므로 500으로 드러나게 함
         Park park = parkRepository.findById(session.getParkId())
                 .orElseThrow(() -> new IllegalStateException("세션의 공원이 없음 sessionId = " + session.getId()));
         return CheckinSessionResponse.of(session, park);
@@ -69,6 +70,15 @@ public class CheckinService {
 
     @Transactional
     public void cancel(Long userId, Long sessionId) {
+        findOwnedInProgress(userId, sessionId).cancel(clock.instant());
+    }
+
+    @Transactional
+    public void fail(Long userId, Long sessionId, FailCheckinRequest request) {
+        findOwnedInProgress(userId, sessionId).fail(request.reason(), clock.instant());
+    }
+
+    private CheckinSession findOwnedInProgress(Long userId, Long sessionId) {
         CheckinSession session = checkinSessionRepository.findById(sessionId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
         if (!session.getUserId().equals(userId)) {
@@ -77,6 +87,6 @@ public class CheckinService {
         if (session.getStatus() != CheckinStatus.IN_PROGRESS) {
             throw new BusinessException(ErrorCode.INVALID_REQUEST);
         }
-        session.cancel(clock.instant());
+        return session;
     }
 }

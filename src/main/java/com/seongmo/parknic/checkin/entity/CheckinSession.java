@@ -33,6 +33,10 @@ public class CheckinSession {
     @Column(name = "ended_at")
     private Instant endedAt;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "fail_reason", length = 30)
+    private CheckinFailReason failReason;
+
     private CheckinSession(Long userId, Long parkId, Instant startedAt) {
         this.userId = userId;
         this.parkId = parkId;
@@ -46,6 +50,12 @@ public class CheckinSession {
 
     public void cancel(Instant now) {
         this.status = CheckinStatus.CANCELED;
+        this.endedAt = now;
+    }
+
+    public void fail(CheckinFailReason reason, Instant now) {
+        this.status = CheckinStatus.FAILED;
+        this.failReason = reason;
         this.endedAt = now;
     }
 }
