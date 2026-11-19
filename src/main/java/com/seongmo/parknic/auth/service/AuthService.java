@@ -44,6 +44,9 @@ public class AuthService {
         User user = userRepository.findByProviderAndProviderId(DEV_PROVIDER, name)
                 .orElseGet(() -> userRepository.save(User.pending(DEV_PROVIDER, name, clock.instant())));
 
+        if (user.getStatus() == UserStatus.DELETED) {
+            user.rejoin();
+        }
         String accessToken = accessTokenService.issue(user.getId());
         String refreshToken = issueRefreshToken(user.getId(), UUID.randomUUID());
         boolean isNewUser = user.getStatus() == UserStatus.PENDING;
