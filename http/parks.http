@@ -1,0 +1,21 @@
+### 순서: auth.http에서 개발용 로그인(test1)을 먼저 실행해 token1을 만든다
+### 테스트 공원은 DB에 직접 넣는다: manage_no가 TEST-1, TEST-2인 행 (id는 DB가 정함, 아래는 1과 2라고 가정)
+
+### 공원 상세 - 존재하는 공원 -> 200, 11개 필드. averageRating은 null, reviewCount 0, myStatus NONE, myBadgeCount 0 (고정값)
+GET {{baseUrl}}/api/parks/1
+Authorization: Bearer {{token1}}
+
+### 공원 상세 - 다른 공원 -> 200, parkType이 다르다
+GET {{baseUrl}}/api/parks/2
+Authorization: Bearer {{token1}}
+
+### 공원 상세 - 없는 공원 -> 404 NOT_FOUND
+GET {{baseUrl}}/api/parks/999999
+Authorization: Bearer {{token1}}
+
+### 공원 상세 - 숫자가 아닌 id -> 400 또는 500인지 확인
+GET {{baseUrl}}/api/parks/abc
+Authorization: Bearer {{token1}}
+
+### 공원 상세 - 토큰 없음 -> 401
+GET {{baseUrl}}/api/parks/1
