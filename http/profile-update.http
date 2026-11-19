@@ -88,3 +88,23 @@ Authorization: Bearer {{token1}}
   "nickname": "testman1",
   "characterId": 9
 }
+
+### 금지어 포함 닉네임 -> 400 NICKNAME_INAPPROPRIATE (저장되지 않고 기존 프로필 그대로)
+PATCH {{baseUrl}}/api/users/me
+Content-Type: application/json
+Authorization: Bearer {{token1}}
+
+{
+  "nickname": "시발이",
+  "characterId": 1
+}
+
+### 영문 금지어는 대소문자 구분 없이 -> 400 NICKNAME_INAPPROPRIATE
+PATCH {{baseUrl}}/api/users/me
+Content-Type: application/json
+Authorization: Bearer {{token1}}
+
+{
+  "nickname": "FuckYou",
+  "characterId": 1
+}
