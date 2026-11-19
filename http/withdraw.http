@@ -1,0 +1,52 @@
+### 순서: 위에서 아래로 차례로 실행한다. test3 사용자로 탈퇴하며, 탈퇴한 뒤 다시 하려면 DB에서 test3 행을 지운다
+
+### 개발용 로그인 (test3) - token3, refreshToken3 저장
+POST {{baseUrl}}/api/auth/login/apple
+Content-Type: application/json
+
+{
+  "token": "dev:{{devLoginKey}}:test3"
+}
+
+> {%
+    client.global.set("token3", response.body.accessToken);
+    client.global.set("refreshToken3", response.body.refreshToken);
+%}
+
+### 프로필 저장 (test3) - 닉네임 withdraw3으로 ACTIVE 만들기
+PATCH {{baseUrl}}/api/users/me
+Content-Type: application/json
+Authorization: Bearer {{token3}}
+
+{
+  "nickname": "withdraw3",
+  "characterId": 3
+}
+
+### 탈퇴 (test3) -> 200
+### DB: status=DELETED, nickname=null, refresh_tokens 행 0개
+DELETE {{baseUrl}}/api/users/me
+Authorization: Bearer {{token3}}
+
+### 탈퇴 후 내 정보 조회 -> 401
+GET {{baseUrl}}/api/users/me
+Authorization: Bearer {{token3}}
+
+### 탈퇴 후 재발급 (탈퇴 전에 받은 refreshToken3) -> 401
+POST {{baseUrl}}/api/auth/reissue
+Content-Type: application/json
+
+{
+  "refreshToken": "{{refreshToken3}}"
+}
+
+### 탈퇴를 한 번 더 -> 401
+DELETE {{baseUrl}}/api/users/me
+Authorization: Bearer {{token3}}
+
+### 탈퇴한 닉네임을 다른 사용자(test2)가 쓸 수 있다 -> 200 available: true
+GET {{baseUrl}}/api/users/nickname/check?nickname=withdraw3
+Authorization: Bearer {{token2}}
+
+### 탈퇴 - 토큰 없음 -> 401
+DELETE {{baseUrl}}/api/users/me
