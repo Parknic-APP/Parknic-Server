@@ -50,3 +50,42 @@ Authorization: Bearer {{token2}}
 
 ### 탈퇴 - 토큰 없음 -> 401
 DELETE {{baseUrl}}/api/users/me
+
+### 탈퇴한 계정으로 다시 로그인 (test3) -> 200, isNewUser: true. token3, refreshToken3을 새 값으로 저장
+POST {{baseUrl}}/api/auth/login/apple
+Content-Type: application/json
+
+{
+  "token": "dev:{{devLoginKey}}:test3"
+}
+
+> {%
+    client.global.set("token3", response.body.accessToken);
+    client.global.set("refreshToken3", response.body.refreshToken);
+%}
+
+### 다시 가입한 내 정보 -> 200, nickname과 characterId가 null
+GET {{baseUrl}}/api/users/me
+Authorization: Bearer {{token3}}
+
+### 다시 가입한 뒤 프로필 저장 -> 200 (PENDING -> ACTIVE). 탈퇴 전 닉네임 withdraw3도 다시 쓸 수 있다
+PATCH {{baseUrl}}/api/users/me
+Content-Type: application/json
+Authorization: Bearer {{token3}}
+
+{
+  "nickname": "withdraw3",
+  "characterId": 4
+}
+
+### 저장 후 다시 로그인 -> isNewUser: false, 프로필이 그대로여야 한다 (ACTIVE 사용자의 로그인이 프로필을 지우지 않는지 확인)
+POST {{baseUrl}}/api/auth/login/apple
+Content-Type: application/json
+
+{
+  "token": "dev:{{devLoginKey}}:test3"
+}
+
+### 로그인 후 내 정보 -> nickname withdraw3, characterId 4 그대로
+GET {{baseUrl}}/api/users/me
+Authorization: Bearer {{token3}}
