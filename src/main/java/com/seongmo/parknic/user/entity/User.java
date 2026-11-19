@@ -63,4 +63,10 @@ public class User {
         this.nickname = null;
         this.appleRefreshToken = null;
     }
+
+    public void rejoin() {
+        this.status = UserStatus.PENDING;
+        this.nickname = null;
+        this.characterId = null;
+    }
 }
