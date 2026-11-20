@@ -17,7 +17,7 @@ public record ParkDetailResponse(
         int myBadgeCount
 ) {
 
-    public static ParkDetailResponse from(Park park) {
+    public static ParkDetailResponse of(Park park, ParkMyBadge myBadge) {
         return new ParkDetailResponse(
                 park.getId(),
                 park.getName(),
@@ -26,11 +26,11 @@ public record ParkDetailResponse(
                 park.getLatitude(),
                 park.getLongitude(),
                 park.getRadiusM(),
-                // 리뷰, 배지가 생기기 전까지는 고정값
+                // 리뷰가 생기기 전까지는 averageRating, reviewCount가 고정값
                 null,
                 0,
-                ParkBadgeStatus.NONE,
-                0
+                myBadge.status(),
+                myBadge.count()
         );
     }
 }
