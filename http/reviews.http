@@ -110,3 +110,29 @@ Content-Type: application/json
   "rating": 5,
   "content": "토큰이 없는 요청입니다. 거절됩니다."
 }
+
+### ── 리뷰 목록 ──
+### 사전 준비: 목록 시나리오는 리뷰가 25개 이상인 공원과 그 작성자들이 필요하다 (DB에 직접 넣어서 확인)
+
+### 리뷰 목록 - 첫 페이지 -> 200, 최신순 최대 20개, 다음 페이지가 있으면 nextCursor 문자열
+GET {{baseUrl}}/api/parks/1/reviews
+Authorization: Bearer {{token1}}
+
+### 리뷰 목록 - 다음 페이지 (위 응답의 nextCursor를 넣는다) -> 200, 앞 페이지와 겹치지 않고 마지막이면 nextCursor null
+GET {{baseUrl}}/api/parks/1/reviews?cursor=40
+Authorization: Bearer {{token1}}
+
+### 리뷰 목록 - 리뷰 없는 공원 -> 200 { reviews: [], nextCursor: null }
+GET {{baseUrl}}/api/parks/2/reviews
+Authorization: Bearer {{token1}}
+
+### 리뷰 목록 - cursor가 숫자가 아님 -> 400 INVALID_REQUEST
+GET {{baseUrl}}/api/parks/1/reviews?cursor=abc
+Authorization: Bearer {{token1}}
+
+### 리뷰 목록 - 없는 공원 -> 404 NOT_FOUND
+GET {{baseUrl}}/api/parks/999999/reviews
+Authorization: Bearer {{token1}}
+
+### 리뷰 목록 - 토큰 없음 -> 401
+GET {{baseUrl}}/api/parks/1/reviews
