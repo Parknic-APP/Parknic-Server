@@ -8,4 +8,6 @@ import java.time.LocalDate;
 public interface BadgeRepository extends JpaRepository<Badge, Long> {
 
     boolean existsByUserIdAndParkIdAndEarnedDate(Long userId, Long parkId, LocalDate earnedDate);
+
+    boolean existsByUserIdAndParkId(Long userId, Long parkId);
 }
