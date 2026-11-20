@@ -5,7 +5,10 @@ import com.seongmo.parknic.common.error.BusinessException;
 import com.seongmo.parknic.common.error.ErrorCode;
 import com.seongmo.parknic.park.repository.ParkRepository;
 import com.seongmo.parknic.review.dto.CreateReviewRequest;
+import com.seongmo.parknic.review.dto.ReviewItemResponse;
+import com.seongmo.parknic.review.dto.ReviewListResponse;
 import com.seongmo.parknic.review.entity.Review;
+import com.seongmo.parknic.review.repository.ReviewQueryRepository;
 import com.seongmo.parknic.review.repository.ReviewRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.NestedExceptionUtils;
@@ -14,17 +17,20 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
 public class ReviewService {
 
     private static final String REVIEW_UNIQUE_CONSTRAINT = "uq_reviews_user_park";
+    private static final int PAGE_SIZE = 20;
 
     private final Clock clock;
     private final ReviewRepository reviewRepository;
     private final ParkRepository parkRepository;
     private final BadgeRepository badgeRepository;
+    private final ReviewQueryRepository reviewQueryRepository;
 
     @Transactional
     public void write(Long userId, Long parkId, CreateReviewRequest request) {
@@ -53,6 +59,36 @@ public class ReviewService {
                 throw new BusinessException(ErrorCode.REVIEW_ALREADY_EXISTS);
             }
             throw e;
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public ReviewListResponse getReviews(Long userId, Long parkId, String cursor) {
+        // 공원 존재 -> 없으면 불가
+        if (!parkRepository.existsById(parkId)) {
+            throw new BusinessException(ErrorCode.NOT_FOUND);
+        }
+
+        long cursorId = parseCursor(cursor);
+
+        // 다음 페이지가 있는지 알기 위해 한 개 더 가져옴
+        List<ReviewItemResponse> rows = reviewQueryRepository.findByPark(userId, parkId, cursorId, PAGE_SIZE + 1);
+
+        boolean hasNext = rows.size() > PAGE_SIZE;
+        List<ReviewItemResponse> page = hasNext ? rows.subList(0, PAGE_SIZE) : rows;
+        String nextCursor = hasNext ? String.valueOf(page.get(page.size() - 1).id()) : null;
+
+        return new ReviewListResponse(page, nextCursor);
+    }
+
+    private long parseCursor(String cursor) {
+        if (cursor == null || cursor.isBlank()) {
+            return Long.MAX_VALUE;
+        }
+        try {
+            return Long.parseLong(cursor);
+        } catch (NumberFormatException e) {
+            throw new BusinessException(ErrorCode.INVALID_REQUEST);
         }
     }
 }
