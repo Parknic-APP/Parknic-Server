@@ -2,12 +2,14 @@ package com.seongmo.parknic.park.repository;
 
 import com.seongmo.parknic.park.dto.ParkBadgeStatus;
 import com.seongmo.parknic.park.dto.ParkMyBadge;
+import com.seongmo.parknic.park.dto.ParkReviewStats;
 import com.seongmo.parknic.park.dto.ParkSummaryResponse;
 import com.seongmo.parknic.park.entity.ParkType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -96,6 +98,25 @@ public class ParkQueryRepository {
                     return new ParkMyBadge(
                             ParkBadgeStatus.of(badgeCount, rs.getBoolean("earned_today")),
                             (int) badgeCount);
+                })
+                .single();
+    }
+
+    public ParkReviewStats findReviewStats(Long parkId) {
+        return jdbcClient.sql("""
+                        SELECT ROUND(AVG(r.rating), 1) AS average_rating, count(*) AS review_count
+                        FROM reviews r
+                        JOIN users u ON u.id = r.user_id
+                        WHERE r.park_id = :parkId
+                        AND r.hidden = FALSE
+                        AND u.status <> 'DELETED'
+                        """)
+                .param("parkId", parkId)
+                .query((rs, rowNum) -> {
+                    BigDecimal avg = rs.getBigDecimal("average_rating");
+                    return new ParkReviewStats(
+                            avg == null ? null : avg.doubleValue(),
+                            rs.getInt("review_count"));
                 })
                 .single();
     }
