@@ -76,3 +76,15 @@ Authorization: Bearer {{token1}}
 ### 주변 공원 - 배지가 하나도 없는 사용자도 목록이 줄지 않는다(LEFT JOIN) -> 항목 수가 위와 같고 모두 NONE
 GET {{baseUrl}}/api/parks/nearby?lat=37.517396&lng=126.983984&radius=5000
 Authorization: Bearer {{token2}}
+
+### ── 평균 별점과 리뷰 수 ──
+### 사전 준비: 리뷰 데이터는 DB에 직접 넣어서 확인한다 (숨김/탈퇴 사용자 리뷰 포함)
+
+### 공원 상세 - 리뷰가 없는 공원 -> averageRating null, reviewCount 0
+GET {{baseUrl}}/api/parks/2
+Authorization: Bearer {{token1}}
+
+### 공원 상세 - 별점 5, 4, 4 리뷰 3개 -> averageRating 4.3, reviewCount 3
+### 숨김 리뷰와 탈퇴한 사용자의 리뷰는 개수와 평균에서 빠진다. 차단 여부와 상관없이 모두에게 같은 값
+GET {{baseUrl}}/api/parks/1
+Authorization: Bearer {{token1}}
