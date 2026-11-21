@@ -6,6 +6,7 @@ import com.seongmo.parknic.common.time.Kst;
 import com.seongmo.parknic.park.dto.ParkDetailResponse;
 import com.seongmo.parknic.park.dto.ParkListResponse;
 import com.seongmo.parknic.park.dto.ParkMyBadge;
+import com.seongmo.parknic.park.dto.ParkReviewStats;
 import com.seongmo.parknic.park.entity.Park;
 import com.seongmo.parknic.park.repository.ParkQueryRepository;
 import com.seongmo.parknic.park.repository.ParkRepository;
@@ -32,7 +33,8 @@ public class ParkService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
 
         ParkMyBadge myBadge = parkQueryRepository.findMyBadge(userId, parkId, Kst.today(clock));
-        return ParkDetailResponse.of(park, myBadge);
+        ParkReviewStats stats = parkQueryRepository.findReviewStats(parkId);
+        return ParkDetailResponse.of(park, myBadge, stats);
     }
 
     @Transactional(readOnly = true)
