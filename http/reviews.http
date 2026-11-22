@@ -224,3 +224,69 @@ Authorization: Bearer {{token1}}
 
 ### 리뷰 삭제 - 토큰 없음 -> 401
 DELETE {{baseUrl}}/api/reviews/14
+
+### ── 리뷰 신고 ──
+### 사전 준비: token1은 신고자, 신고 대상 리뷰(작성자는 token1이 아닌 사용자)의 id를 경로의 30에, token1이 쓴 리뷰의 id를 31에 넣는다
+
+### 리뷰 신고 - 남의 리뷰 -> 200. review_reports에 PENDING 행이 생긴다
+POST {{baseUrl}}/api/reviews/30/reports
+Content-Type: application/json
+Authorization: Bearer {{token1}}
+
+{
+  "reason": "SPAM"
+}
+
+### 리뷰 신고 - 같은 리뷰를 한 번 더 -> 409 REVIEW_ALREADY_REPORTED (행이 늘지 않는다)
+POST {{baseUrl}}/api/reviews/30/reports
+Content-Type: application/json
+Authorization: Bearer {{token1}}
+
+{
+  "reason": "SPAM"
+}
+
+### 리뷰 신고 - 내 리뷰 -> 403 FORBIDDEN (행이 생기지 않는다)
+POST {{baseUrl}}/api/reviews/31/reports
+Content-Type: application/json
+Authorization: Bearer {{token1}}
+
+{
+  "reason": "SPAM"
+}
+
+### 리뷰 신고 - 없는 리뷰 -> 404 NOT_FOUND
+POST {{baseUrl}}/api/reviews/999999/reports
+Content-Type: application/json
+Authorization: Bearer {{token1}}
+
+{
+  "reason": "SPAM"
+}
+
+### 리뷰 신고 - 잘못된 reason -> 400 INVALID_REQUEST
+POST {{baseUrl}}/api/reviews/30/reports
+Content-Type: application/json
+Authorization: Bearer {{token1}}
+
+{
+  "reason": "XXX"
+}
+
+### 리뷰 신고 - reason 누락 -> 400 INVALID_REQUEST
+POST {{baseUrl}}/api/reviews/30/reports
+Content-Type: application/json
+Authorization: Bearer {{token1}}
+
+{}
+
+### 리뷰 신고 - 토큰 없음 -> 401
+POST {{baseUrl}}/api/reviews/30/reports
+Content-Type: application/json
+
+{
+  "reason": "SPAM"
+}
+
+### 서로 다른 사용자 5명이 신고하면 5번째에 리뷰가 hidden=true가 되어 목록과 공원 상세 평균에서 빠진다
+### 숨겨진 뒤의 신고는 404, 작성자는 숨겨진 리뷰를 수정할 수 없지만(404) 삭제할 수 있다(200)

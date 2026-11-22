@@ -17,6 +17,7 @@ public enum ErrorCode {
     NICKNAME_DUPLICATED(HttpStatus.CONFLICT, "이미 사용 중인 닉네임입니다."),
     NICKNAME_INAPPROPRIATE(HttpStatus.BAD_REQUEST, "사용할 수 없는 닉네임입니다."),
     TOKEN_EXPIRED(HttpStatus.UNAUTHORIZED, "토큰이 만료되었습니다."),
+    REVIEW_ALREADY_REPORTED(HttpStatus.CONFLICT, "이미 신고한 리뷰입니다."),
 
     // ----- 공통 -----
     INVALID_REQUEST(HttpStatus.BAD_REQUEST, "잘못된 요청입니다."),
