@@ -198,3 +198,29 @@ Content-Type: application/json
   "rating": 2,
   "content": "수정한 내용입니다 열자이상"
 }
+
+### ── 리뷰 삭제 ──
+### 사전 준비: 내 리뷰 id를 DB에서 확인해 경로의 14, 남의 리뷰 id를 15, 내 숨김 리뷰 id를 16 자리에 넣는다
+
+### 리뷰 삭제 - 내 리뷰 -> 200. DB에서 행이 사라지고 신고(review_reports)도 CASCADE로 함께 삭제. 목록/공원 상세 평균에서 빠진다
+DELETE {{baseUrl}}/api/reviews/14
+Authorization: Bearer {{token1}}
+
+### 리뷰 삭제 - 같은 리뷰 한 번 더 -> 404 NOT_FOUND
+DELETE {{baseUrl}}/api/reviews/14
+Authorization: Bearer {{token1}}
+
+### 리뷰 삭제 - 남의 리뷰 -> 404 NOT_FOUND (지워지지 않음)
+DELETE {{baseUrl}}/api/reviews/15
+Authorization: Bearer {{token1}}
+
+### 리뷰 삭제 - 내 숨김 리뷰 -> 200 (숨김이어도 작성자는 삭제할 수 있다)
+DELETE {{baseUrl}}/api/reviews/16
+Authorization: Bearer {{token1}}
+
+### 리뷰 삭제 - 없는 리뷰 -> 404 NOT_FOUND
+DELETE {{baseUrl}}/api/reviews/999999
+Authorization: Bearer {{token1}}
+
+### 리뷰 삭제 - 토큰 없음 -> 401
+DELETE {{baseUrl}}/api/reviews/14
