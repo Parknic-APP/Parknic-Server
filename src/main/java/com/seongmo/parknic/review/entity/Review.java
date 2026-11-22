@@ -57,4 +57,9 @@ public class Review {
         this.content = content;
         this.updatedAt = now;
     }
+
+    public void hide() {
+        this.hidden = true;
+    }
+
 }
