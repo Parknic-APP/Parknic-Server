@@ -1,0 +1,37 @@
+### 순서: auth.http에서 개발용 로그인(test1)을 먼저 실행해 token1을 만든다
+### 사전 준비: 랭킹은 badges 데이터가 필요하다. 사용자와 배지를 DB에 넣어서 확인한다 (동점은 마지막 배지 시각이 이른 사람이 위)
+
+### 주간 랭킹 - 이번 주(week 생략) -> 200, weekStart 월요일/weekEnd 일요일, podium 1~3위, others 4~20위, me(배지 없으면 null)
+GET {{baseUrl}}/api/parks/1/rankings
+Authorization: Bearer {{token1}}
+
+### 주간 랭킹 - 그 주에 속한 아무 날짜(수요일) -> 200, 같은 주의 월요일~일요일
+GET {{baseUrl}}/api/parks/1/rankings?week=2026-11-18
+Authorization: Bearer {{token1}}
+
+### 주간 랭킹 - 일요일 날짜 -> 200, 그 주의 월요일로 맞춰진다 (weekStart 2026-11-16)
+GET {{baseUrl}}/api/parks/1/rankings?week=2026-11-22
+Authorization: Bearer {{token1}}
+
+### 주간 랭킹 - 다음 주(배지 없음) -> 200, podium [], others [], me null
+GET {{baseUrl}}/api/parks/1/rankings?week=2026-11-23
+Authorization: Bearer {{token1}}
+
+### 주간 랭킹 - 지난 주 -> 200, 그 주의 배지만 집계 (일요일 23:59 배지는 그 주, 월요일 00:00 배지는 다음 주)
+GET {{baseUrl}}/api/parks/1/rankings?week=2026-11-15
+Authorization: Bearer {{token1}}
+
+### 주간 랭킹 - week 형식 오류 -> 400 INVALID_REQUEST
+GET {{baseUrl}}/api/parks/1/rankings?week=abc
+Authorization: Bearer {{token1}}
+
+### 주간 랭킹 - 존재하지 않는 날짜 -> 400 INVALID_REQUEST
+GET {{baseUrl}}/api/parks/1/rankings?week=2026-13-45
+Authorization: Bearer {{token1}}
+
+### 주간 랭킹 - 없는 공원 -> 404 NOT_FOUND
+GET {{baseUrl}}/api/parks/999999/rankings
+Authorization: Bearer {{token1}}
+
+### 주간 랭킹 - 토큰 없음 -> 401
+GET {{baseUrl}}/api/parks/1/rankings
