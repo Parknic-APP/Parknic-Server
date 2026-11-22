@@ -1,0 +1,48 @@
+### 순서: auth.http에서 개발용 로그인(test1, test2)을 먼저 실행해 token1, token2를 만든다
+### 사전 준비: 아래 경로의 2를 차단할 사용자(test2)의 id로, 3을 탈퇴한 사용자의 id로 바꾼다 (DB에서 확인)
+
+### 사용자 차단 (test1이 test2를 차단) -> 200. user_blocks에 (test1, test2) 행 1개
+POST {{baseUrl}}/api/users/2/block
+Authorization: Bearer {{token1}}
+
+### 같은 사용자를 다시 차단 -> 200 (멱등). 행은 여전히 1개
+POST {{baseUrl}}/api/users/2/block
+Authorization: Bearer {{token1}}
+
+### 차단 후 공원의 리뷰 목록 (test1이 보면 test2의 리뷰가 없다) -> 200
+GET {{baseUrl}}/api/parks/1/reviews
+Authorization: Bearer {{token1}}
+
+### 상대(test2)가 보는 목록에는 test1의 리뷰가 그대로 보인다 (차단은 한 방향) -> 200
+GET {{baseUrl}}/api/parks/1/reviews
+Authorization: Bearer {{token2}}
+
+### 차단 해제 -> 200. 행이 사라지고 test2의 리뷰가 다시 보인다
+DELETE {{baseUrl}}/api/users/2/block
+Authorization: Bearer {{token1}}
+
+### 차단하지 않은 사용자 해제 -> 200 (멱등)
+DELETE {{baseUrl}}/api/users/2/block
+Authorization: Bearer {{token1}}
+
+### 자기 자신 차단 -> 400 INVALID_REQUEST (본인 id로 바꿔서 실행)
+POST {{baseUrl}}/api/users/1/block
+Authorization: Bearer {{token1}}
+
+### 없는 사용자 차단 -> 404 NOT_FOUND
+POST {{baseUrl}}/api/users/999999/block
+Authorization: Bearer {{token1}}
+
+### 탈퇴한 사용자 차단 -> 404 NOT_FOUND
+POST {{baseUrl}}/api/users/3/block
+Authorization: Bearer {{token1}}
+
+### 사용자 id가 숫자가 아님 -> 400 INVALID_REQUEST
+POST {{baseUrl}}/api/users/abc/block
+Authorization: Bearer {{token1}}
+
+### 차단 - 토큰 없음 -> 401
+POST {{baseUrl}}/api/users/2/block
+
+### 차단 해제 - 토큰 없음 -> 401
+DELETE {{baseUrl}}/api/users/2/block
