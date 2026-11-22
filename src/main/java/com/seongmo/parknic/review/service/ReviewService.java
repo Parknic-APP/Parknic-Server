@@ -7,6 +7,7 @@ import com.seongmo.parknic.park.repository.ParkRepository;
 import com.seongmo.parknic.review.dto.CreateReviewRequest;
 import com.seongmo.parknic.review.dto.ReviewItemResponse;
 import com.seongmo.parknic.review.dto.ReviewListResponse;
+import com.seongmo.parknic.review.dto.UpdateReviewRequest;
 import com.seongmo.parknic.review.entity.Review;
 import com.seongmo.parknic.review.repository.ReviewQueryRepository;
 import com.seongmo.parknic.review.repository.ReviewRepository;
@@ -90,5 +91,13 @@ public class ReviewService {
         } catch (NumberFormatException e) {
             throw new BusinessException(ErrorCode.INVALID_REQUEST);
         }
+    }
+
+    @Transactional
+    public void update(Long userId, Long reviewId, UpdateReviewRequest request) {
+        Review review = reviewRepository.findByIdAndUserIdAndHiddenFalse(reviewId, userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
+
+        review.update(request.rating(), request.content(), clock.instant());
     }
 }
