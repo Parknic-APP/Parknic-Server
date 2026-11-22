@@ -1,9 +1,11 @@
 package com.seongmo.parknic.review.controller;
 
 import com.seongmo.parknic.common.security.CurrentUserId;
+import com.seongmo.parknic.review.dto.CreateReportRequest;
 import com.seongmo.parknic.review.dto.CreateReviewRequest;
 import com.seongmo.parknic.review.dto.ReviewListResponse;
 import com.seongmo.parknic.review.dto.UpdateReviewRequest;
+import com.seongmo.parknic.review.service.ReviewReportService;
 import com.seongmo.parknic.review.service.ReviewService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -14,6 +16,7 @@ import org.springframework.web.bind.annotation.*;
 public class ReviewController {
 
     private final ReviewService reviewService;
+    private final ReviewReportService reviewReportService;
 
     @PostMapping("/api/parks/{parkId}/reviews")
     public void write(@CurrentUserId Long userId, @PathVariable Long parkId, @Valid @RequestBody CreateReviewRequest request) {
@@ -33,5 +36,10 @@ public class ReviewController {
     @DeleteMapping("/api/reviews/{reviewId}")
     public void delete(@CurrentUserId Long userId, @PathVariable Long reviewId) {
         reviewService.delete(userId, reviewId);
+    }
+
+    @PostMapping("/api/reviews/{reviewId}/reports")
+    public void report(@CurrentUserId Long userId, @PathVariable Long reviewId, @Valid @RequestBody CreateReportRequest request) {
+        reviewReportService.report(userId, reviewId, request);
     }
 }
