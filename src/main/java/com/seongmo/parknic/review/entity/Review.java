@@ -51,4 +51,10 @@ public class Review {
     public static Review write(Long userId, Long parkId, int rating, String content, Instant now) {
         return new Review(userId, parkId, (short) rating, content, now);
     }
+
+    public void update(int rating, String content, Instant now) {
+        this.rating = (short) rating;
+        this.content = content;
+        this.updatedAt = now;
+    }
 }
