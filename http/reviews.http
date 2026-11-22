@@ -136,3 +136,65 @@ Authorization: Bearer {{token1}}
 
 ### 리뷰 목록 - 토큰 없음 -> 401
 GET {{baseUrl}}/api/parks/1/reviews
+
+### ── 리뷰 수정 ──
+### 사전 준비: 내 리뷰 id를 DB에서 확인해 아래 경로의 12를, 남의 리뷰 id를 13 자리에 넣는다
+
+### 리뷰 수정 - 내 리뷰 -> 200. DB의 rating, content, updated_at이 바뀌고 created_at은 그대로
+PATCH {{baseUrl}}/api/reviews/12
+Content-Type: application/json
+Authorization: Bearer {{token1}}
+
+{
+  "rating": 2,
+  "content": "수정한 내용입니다 열자이상"
+}
+
+### 리뷰 수정 - 남의 리뷰 -> 404 NOT_FOUND (데이터 변경 없음)
+PATCH {{baseUrl}}/api/reviews/13
+Content-Type: application/json
+Authorization: Bearer {{token1}}
+
+{
+  "rating": 2,
+  "content": "수정한 내용입니다 열자이상"
+}
+
+### 리뷰 수정 - 없는 리뷰 -> 404 NOT_FOUND
+PATCH {{baseUrl}}/api/reviews/999999
+Content-Type: application/json
+Authorization: Bearer {{token1}}
+
+{
+  "rating": 2,
+  "content": "수정한 내용입니다 열자이상"
+}
+
+### 리뷰 수정 - rating 6 -> 400 INVALID_REQUEST
+PATCH {{baseUrl}}/api/reviews/12
+Content-Type: application/json
+Authorization: Bearer {{token1}}
+
+{
+  "rating": 6,
+  "content": "수정한 내용입니다 열자이상"
+}
+
+### 리뷰 수정 - content 9자 -> 400 INVALID_REQUEST
+PATCH {{baseUrl}}/api/reviews/12
+Content-Type: application/json
+Authorization: Bearer {{token1}}
+
+{
+  "rating": 3,
+  "content": "아홉글자입니다아아"
+}
+
+### 리뷰 수정 - 토큰 없음 -> 401
+PATCH {{baseUrl}}/api/reviews/12
+Content-Type: application/json
+
+{
+  "rating": 2,
+  "content": "수정한 내용입니다 열자이상"
+}
