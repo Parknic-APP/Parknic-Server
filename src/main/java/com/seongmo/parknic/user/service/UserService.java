@@ -1,22 +1,24 @@
 package com.seongmo.parknic.user.service;
 
-import com.seongmo.parknic.auth.repository.RefreshTokenRepository;
 import com.seongmo.parknic.auth.service.AuthService;
 import com.seongmo.parknic.character.repository.CharacterRepository;
 import com.seongmo.parknic.common.error.BusinessException;
 import com.seongmo.parknic.common.error.ErrorCode;
 import com.seongmo.parknic.common.time.Kst;
-import com.seongmo.parknic.user.entity.UserStatus;
 import com.seongmo.parknic.user.dto.NicknameCheckResponse;
 import com.seongmo.parknic.user.dto.UpdateProfileRequest;
 import com.seongmo.parknic.user.dto.UserProfileResponse;
 import com.seongmo.parknic.user.entity.User;
+import com.seongmo.parknic.user.entity.UserStatus;
+import com.seongmo.parknic.user.repository.UserBlockRepository;
 import com.seongmo.parknic.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.NestedExceptionUtils;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.time.Clock;
 
 @Service
 @RequiredArgsConstructor
@@ -28,6 +30,8 @@ public class UserService {
     private final CharacterRepository characterRepository;
     private final NicknameFilter nicknameFilter;
     private final AuthService authService;
+    private final UserBlockRepository userBlockRepository;
+    private final Clock clock;
 
     @Transactional
     public void updateProfile(Long userId, UpdateProfileRequest request) {
@@ -89,5 +93,25 @@ public class UserService {
 
         authService.logout(userId);
         user.withdraw();
+    }
+
+    @Transactional
+    public void block(Long userId, Long targetId) {
+        // 자신은 차단 불가
+        if (userId.equals(targetId)) {
+            throw new BusinessException(ErrorCode.INVALID_REQUEST);
+        }
+
+        // 없는 사용자, 탈퇴한 사용자는 차단 불가
+        if (!userRepository.existsByIdAndStatusNot(targetId, UserStatus.DELETED)) {
+            throw new BusinessException(ErrorCode.NOT_FOUND);
+        }
+
+        userBlockRepository.insertIfAbsent(userId, targetId, clock.instant());
+    }
+
+    @Transactional
+    public void unblock(Long userId, Long targetId) {
+        userBlockRepository.delete(userId, targetId);
     }
 }
