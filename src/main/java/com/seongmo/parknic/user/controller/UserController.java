@@ -43,4 +43,16 @@ public class UserController {
         userService.withdraw(userId);
         log.info("회원 탈퇴 userId={}", userId);
     }
+
+    @PostMapping("/{targetId}/block")
+    public void block(@CurrentUserId Long userId, @PathVariable Long targetId) {
+        userService.block(userId, targetId);
+        log.info("사용자 차단 userId={} targetId={}", userId, targetId);
+    }
+
+    @DeleteMapping("/{targetId}/block")
+    public void unblock(@CurrentUserId Long userId, @PathVariable Long targetId) {
+        userService.unblock(userId, targetId);
+        log.info("사용자 차단 해제 userId={} targetId={}", userId, targetId);
+    }
 }
