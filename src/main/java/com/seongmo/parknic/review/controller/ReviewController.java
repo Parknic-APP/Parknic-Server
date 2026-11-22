@@ -29,4 +29,9 @@ public class ReviewController {
     public void update(@CurrentUserId Long userId, @PathVariable Long reviewId, @Valid @RequestBody UpdateReviewRequest request) {
         reviewService.update(userId, reviewId, request);
     }
+
+    @DeleteMapping("/api/reviews/{reviewId}")
+    public void delete(@CurrentUserId Long userId, @PathVariable Long reviewId) {
+        reviewService.delete(userId, reviewId);
+    }
 }

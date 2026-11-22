@@ -100,4 +100,12 @@ public class ReviewService {
 
         review.update(request.rating(), request.content(), clock.instant());
     }
+
+    @Transactional
+    public void delete(Long userId, Long reviewId) {
+        int deleted = reviewRepository.deleteByIdAndUserId(reviewId, userId);
+        if (deleted == 0) {
+            throw new BusinessException(ErrorCode.NOT_FOUND);
+        }
+    }
 }
