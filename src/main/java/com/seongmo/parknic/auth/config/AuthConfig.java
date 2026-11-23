@@ -4,6 +4,6 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-@EnableConfigurationProperties(DevLoginProperties.class)
+@EnableConfigurationProperties({DevLoginProperties.class, AppleProperties.class})
 public class AuthConfig {
 }
