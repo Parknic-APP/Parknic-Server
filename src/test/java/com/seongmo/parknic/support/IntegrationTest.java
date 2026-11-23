@@ -110,4 +110,37 @@ public abstract class IntegrationTest {
                 .param("earnedAt", OffsetDateTime.ofInstant(earnedAt, ZoneOffset.UTC))
                 .update();
     }
+
+    /** 리뷰를 직접 넣고 id를 돌려준다. 배지 보유 같은 작성 규칙은 거치지 않는다. */
+    protected long createReview(long userId, long parkId, int rating, boolean hidden) {
+        return jdbc.sql("""
+                        INSERT INTO reviews (user_id, park_id, rating, content, hidden, created_at, updated_at)
+                        VALUES (:userId, :parkId, :rating, '테스트 리뷰입니다. 열 글자가 넘습니다', :hidden, now(), now())
+                        RETURNING id
+                        """)
+                .param("userId", userId)
+                .param("parkId", parkId)
+                .param("rating", rating)
+                .param("hidden", hidden)
+                .query(Long.class)
+                .single();
+    }
+
+    /** blocker가 blocked를 차단한 상태로 만든다. */
+    protected void createBlock(long blockerId, long blockedId) {
+        jdbc.sql("INSERT INTO user_blocks (blocker_id, blocked_id, created_at) VALUES (:blocker, :blocked, now())")
+                .param("blocker", blockerId)
+                .param("blocked", blockedId)
+                .update();
+    }
+
+    protected void createReport(long reviewId, long reporterId) {
+        jdbc.sql("""
+                        INSERT INTO review_reports (review_id, reporter_id, reason, status, created_at)
+                        VALUES (:reviewId, :reporterId, 'SPAM', 'PENDING', now())
+                        """)
+                .param("reviewId", reviewId)
+                .param("reporterId", reporterId)
+                .update();
+    }
 }
