@@ -1,6 +1,7 @@
 package com.seongmo.parknic.user.controller;
 
 import com.seongmo.parknic.common.security.CurrentUserId;
+import com.seongmo.parknic.user.dto.UserStatsResponse;
 import com.seongmo.parknic.user.service.UserService;
 import com.seongmo.parknic.user.dto.NicknameCheckResponse;
 import com.seongmo.parknic.user.dto.UpdateProfileRequest;
@@ -54,5 +55,10 @@ public class UserController {
     public void unblock(@CurrentUserId Long userId, @PathVariable Long targetId) {
         userService.unblock(userId, targetId);
         log.info("사용자 차단 해제 userId={} targetId={}", userId, targetId);
+    }
+
+    @GetMapping("/me/stats")
+    public UserStatsResponse getStats(@CurrentUserId Long userId) {
+        return userService.getStats(userId);
     }
 }
