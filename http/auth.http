@@ -120,3 +120,10 @@ POST {{baseUrl}}/api/auth/logout
 ### - 서명: Apple 공개키 목록(https://appleid.apple.com/auth/keys, RS256), iss = https://appleid.apple.com, aud = 앱 Bundle ID(parknic.apple.client-id), exp
 ### - 검증에 실패하면(서명 불일치, 만료, iss/aud 불일치, JWT 형식 아님) 401 UNAUTHORIZED
 ### - 진짜 Apple 토큰은 실제 기기에서 Sign in with Apple을 해야 얻을 수 있어서 .http로 재현하기 어렵다. 로컬에서는 parknic.apple.jwks-uri를 가짜 JWKS 서버로 바꿔서 확인했다
+
+### ── Apple 탈퇴 시 연결 해제(revoke) ──
+### Apple 로그인 때 authorizationCode를 보내면 서버가 Apple에서 refresh token으로 교환해 users.apple_refresh_token에 저장하고,
+### 회원 탈퇴(DELETE /api/users/me) 때 그 토큰으로 Apple에 연결 해제를 요청한다
+### - 교환/폐기가 실패해도(Apple 오류, 코드 만료, 설정 없음) 로그인과 탈퇴는 그대로 진행되고 서버 로그에 경고만 남는다
+### - 필요한 설정: APPLE_TEAM_ID, APPLE_KEY_ID, APPLE_PRIVATE_KEY(.p8 내용). 비어 있으면 이 기능만 건너뛴다
+### - 진짜 Apple 서버는 실기기에서만 확인할 수 있어서, 로컬에서는 parknic.apple.token-uri/revoke-uri를 가짜 서버로 바꿔서 확인했다

@@ -29,6 +29,9 @@ services:
       DB_PASSWORD: ${DB_PASSWORD}
       JWT_SECRET: ${JWT_SECRET}
       APPLE_CLIENT_ID: ${APPLE_CLIENT_ID:-com.hwangsanghwan.parknic}
+      APPLE_TEAM_ID: ${APPLE_TEAM_ID:-}
+      APPLE_KEY_ID: ${APPLE_KEY_ID:-}
+      APPLE_PRIVATE_KEY: ${APPLE_PRIVATE_KEY:-}
     ports:
       - "${APP_PORT:-8080}:8080"
     healthcheck:
