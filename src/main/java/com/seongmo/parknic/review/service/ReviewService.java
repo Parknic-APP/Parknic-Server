@@ -5,6 +5,8 @@ import com.seongmo.parknic.common.error.BusinessException;
 import com.seongmo.parknic.common.error.ErrorCode;
 import com.seongmo.parknic.park.repository.ParkRepository;
 import com.seongmo.parknic.review.dto.CreateReviewRequest;
+import com.seongmo.parknic.review.dto.MyReviewItemResponse;
+import com.seongmo.parknic.review.dto.MyReviewListResponse;
 import com.seongmo.parknic.review.dto.ReviewItemResponse;
 import com.seongmo.parknic.review.dto.ReviewListResponse;
 import com.seongmo.parknic.review.dto.UpdateReviewRequest;
@@ -80,6 +82,20 @@ public class ReviewService {
         String nextCursor = hasNext ? String.valueOf(page.get(page.size() - 1).id()) : null;
 
         return new ReviewListResponse(page, nextCursor);
+    }
+
+    @Transactional(readOnly = true)
+    public MyReviewListResponse getMyReviews(Long userId, String cursor) {
+        long cursorId = parseCursor(cursor);
+
+        // 다음 페이지가 있는지 알기 위해 한 개 더 가져옴
+        List<MyReviewItemResponse> rows = reviewQueryRepository.findByUser(userId, cursorId, PAGE_SIZE + 1);
+
+        boolean hasNext = rows.size() > PAGE_SIZE;
+        List<MyReviewItemResponse> page = hasNext ? rows.subList(0, PAGE_SIZE) : rows;
+        String nextCursor = hasNext ? String.valueOf(page.get(page.size() - 1).id()) : null;
+
+        return new MyReviewListResponse(page, (int) reviewRepository.countByUserIdAndHiddenFalse(userId), nextCursor);
     }
 
     private long parseCursor(String cursor) {
