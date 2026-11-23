@@ -3,6 +3,7 @@ package com.seongmo.parknic.review.controller;
 import com.seongmo.parknic.common.security.CurrentUserId;
 import com.seongmo.parknic.review.dto.CreateReportRequest;
 import com.seongmo.parknic.review.dto.CreateReviewRequest;
+import com.seongmo.parknic.review.dto.MyReviewListResponse;
 import com.seongmo.parknic.review.dto.ReviewListResponse;
 import com.seongmo.parknic.review.dto.UpdateReviewRequest;
 import com.seongmo.parknic.review.service.ReviewReportService;
@@ -26,6 +27,11 @@ public class ReviewController {
     @GetMapping("/api/parks/{parkId}/reviews")
     public ReviewListResponse getReviews(@CurrentUserId Long userId, @PathVariable Long parkId, @RequestParam(required = false) String cursor) {
         return reviewService.getReviews(userId, parkId, cursor);
+    }
+
+    @GetMapping("/api/users/me/reviews")
+    public MyReviewListResponse getMyReviews(@CurrentUserId Long userId, @RequestParam(required = false) String cursor) {
+        return reviewService.getMyReviews(userId, cursor);
     }
 
     @PatchMapping("/api/reviews/{reviewId}")
