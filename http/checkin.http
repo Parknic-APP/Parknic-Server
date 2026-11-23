@@ -301,3 +301,10 @@ Content-Type: application/json
 ### - rankChange: 이번 배지로 오른 순위 수(이번 주 첫 배지면 0)
 ### - badgesToPodium: 3위 안이면 0, 아니면 (3위 개수 - 내 개수 + 1)
 ### - 다른 공원의 배지와 지난 주 배지는 계산에 들어가지 않는다
+
+### ── 완료 응답의 newAchievements ──
+### 체크인 완료 응답의 newAchievements는 이번 배지로 새로 달성한 업적만 담는다(threshold 오름차순). 없으면 []
+### - FIRST_BADGE: 내 전체 배지 수 >= 1, PARKS_N: 서로 다른 공원 수 >= N (같은 공원을 여러 번 받아도 1곳)
+### - 업적은 사용자당 한 번만 지급(user_achievements 기본키). 이미 받은 업적은 다시 나오지 않는다
+### - 완료가 실패하면(409, 400 등) 업적 행도 생기지 않는다
+### - STREAK_7(7일 연속)은 아직 지급하지 않는다
