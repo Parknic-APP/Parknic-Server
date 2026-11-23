@@ -4,6 +4,7 @@ import com.seongmo.parknic.achievement.service.AchievementService;
 import com.seongmo.parknic.checkin.config.CheckinProperties;
 import com.seongmo.parknic.checkin.dto.*;
 import com.seongmo.parknic.checkin.entity.Badge;
+import com.seongmo.parknic.checkin.entity.CheckinFailReason;
 import com.seongmo.parknic.checkin.entity.CheckinSession;
 import com.seongmo.parknic.checkin.entity.CheckinStatus;
 import com.seongmo.parknic.checkin.repository.BadgeRepository;
@@ -18,6 +19,7 @@ import com.seongmo.parknic.ranking.dto.MyRankingResponse;
 import com.seongmo.parknic.ranking.dto.WeeklyStanding;
 import com.seongmo.parknic.ranking.service.RankingService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.NestedExceptionUtils;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
@@ -29,6 +31,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class CheckinService {
@@ -99,6 +102,16 @@ public class CheckinService {
     @Transactional
     public void fail(Long userId, Long sessionId, FailCheckinRequest request) {
         findOwnedInProgress(userId, sessionId).fail(request.reason(), clock.instant());
+    }
+
+    // 오늘 00:00(KST) 이전에 시작했는데 아직 진행 중인 세션을 모두 실패(MIDNIGHT) 처리. 여러 번 실행해도 결과가 같다
+    @Transactional
+    public int failExpiredSessions() {
+        Instant midnight = Kst.startOfDay(Kst.today(clock));
+        int failed = checkinSessionRepository.failExpired(
+                midnight, midnight, CheckinStatus.IN_PROGRESS, CheckinStatus.FAILED, CheckinFailReason.MIDNIGHT);
+        log.info("자정 체크인 정리: {}건", failed);
+        return failed;
     }
 
     private CheckinSession findOwnedInProgress(Long userId, Long sessionId) {
