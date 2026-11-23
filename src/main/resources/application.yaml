@@ -25,6 +25,9 @@ parknic:
     secret: ${JWT_SECRET:}
   dev-login:
     enabled: false
+  review:
+    # 앱 심사 기간에만 true (심사용 공원 노출). 평소에는 false
+    mode: ${REVIEW_MODE:false}
   apple:
     client-id: ${APPLE_CLIENT_ID:com.hwangsanghwan.parknic}
     team-id: ${APPLE_TEAM_ID:}
