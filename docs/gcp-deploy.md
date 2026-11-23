@@ -6,8 +6,9 @@
 인터넷 -> caddy(80/443, HTTPS) -> app(8080, 내부) -> db(5432, 내부)
 ```
 
-> **검증 범위**: `docker-compose.prod.yaml`, `Caddyfile`, `scripts/backup-db.sh`, `scripts/restore-db.sh`는 로컬에서 실제로 실행해 확인했다(HTTPS는 `DOMAIN=localhost`의 자체 서명 인증서, 백업과 복구는 데이터를 지운 뒤 되돌아오는지 확인).
-> **확인되지 않음**: 아래 `gcloud`/콘솔 단계(VM 생성, 방화벽, 고정 IP, 업타임 체크)와 실제 도메인에서의 Let's Encrypt 발급은 GCP 계정이 있어야 해서 실행해 보지 못했다. 처음 실행할 때 출력과 오류를 보며 확인한다.
+> **실제 GCP에서 확인됨 (2026-11-23)**: VM 생성(콘솔), 고정 IP, 80/443 방화벽, 도커 설치, 저장소 클론, `.env` 작성, `docker compose up`(Flyway V1~V3 적용), Let's Encrypt 인증서 발급, HTTPS와 HTTP 리다이렉트, 공개 페이지(`/terms` 등), 공원 CSV 적재(17,012건), 백업과 복구 연습(데이터를 지운 뒤 `restore-db.sh --yes`로 복원), 일일 백업 크론.
+> 이어서 확인됨: SSH(22)를 내 IP로 제한한 뒤에도 `ssh parknic` 접속, Cloud Storage 버킷에 백업 업로드(서비스 계정은 생성과 조회만 가능하고 덮어쓰기와 삭제는 거절됨), 크론과 같은 최소 환경에서의 업로드.
+> **확인되지 않음**: 버킷의 수명 주기 규칙(14일)이 실제로 객체를 지우는지, 업타임 체크 알림, 실기기에서의 Apple 로그인, `REVIEW_MODE` 켜기. 해당 절에 표시했다.
 
 ## 0. 준비물
 
@@ -18,20 +19,23 @@
 
 ## 1. VM 만들기
 
-리전은 서울(`asia-northeast3`)을 예로 든다. 사양은 작게 시작해서 필요하면 키운다.
+리전은 서울(`asia-northeast3`)이고, 실제로는 콘솔에서 만들었다(아래 `gcloud` 명령과 같은 결과). **머신 유형은 `e2-medium`(2 vCPU, 4GB)을 권한다.** 이미지를 VM 안에서 빌드하는데 Gradle 빌드가 메모리를 1GB 이상 쓰고, 앱과 PostgreSQL이 같이 돌기 때문에 2GB(`e2-small`)는 빌드 중에 모자랄 수 있다. 나중에 사용량을 보고 VM을 멈춘 뒤 유형을 줄일 수 있다.
+
+콘솔에서 만들 때의 설정: 리전 `asia-northeast3`(서울), 영역은 하나로 고정, OS `Ubuntu 24.04 LTS`, 부팅 디스크 30GB, 네트워킹의 **"HTTP/HTTPS 트래픽 허용" 체크**(80/443 규칙이 자동 생성됨), **외부 IPv4 주소는 "고정 IP 주소 예약"**(이름 `parknic-ip`), 보안의 액세스 범위에서 **Storage를 "읽기/쓰기"**(백업을 Cloud Storage에 올리기 위해).
 
 ```bash
 PROJECT=<프로젝트 ID>
-ZONE=asia-northeast3-a
+ZONE=asia-northeast3-a   # 실제 VM은 콘솔에서 -c 영역에 만들어졌다. 영역은 어디든 되지만 이후 명령에서 같은 값을 쓴다
 
 # 고정 외부 IP (VM을 재시작해도 IP가 바뀌지 않도록)
 gcloud compute addresses create parknic-ip --project=$PROJECT --region=asia-northeast3
 
 # VM (Ubuntu 24.04, 디스크 30GB SSD)
 gcloud compute instances create parknic --project=$PROJECT --zone=$ZONE \
-  --machine-type=e2-small \
+  --machine-type=e2-medium \
   --image-family=ubuntu-2404-lts-amd64 --image-project=ubuntu-os-cloud \
-  --boot-disk-size=30GB --boot-disk-type=pd-ssd \
+  --boot-disk-size=30GB --boot-disk-type=pd-balanced \
+  --scopes=storage-rw,logging-write,monitoring-write \
   --address=parknic-ip --tags=parknic
 
 # 방화벽: 80/443은 모두에게, SSH(22)는 본인 IP만. 5432와 8080은 열지 않는다
@@ -41,29 +45,74 @@ gcloud compute firewall-rules create parknic-ssh --project=$PROJECT \
   --allow=tcp:22 --source-ranges=<내 공인 IP>/32 --target-tags=parknic
 ```
 
-기본 네트워크의 `default-allow-ssh` 규칙이 모든 IP에 22를 열어 두므로, 위 규칙을 만든 뒤 지우거나 범위를 줄인다.
+기본 네트워크의 `default-allow-ssh` 규칙이 모든 IP에 22를 열어 두므로, 위 규칙을 만든 뒤 지우거나 범위를 줄인다(**확인되지 않음**: 콘솔에서 `default-allow-ssh`의 소스 범위를 `<내 공인 IP>/32`로 바꾸고, 콘솔 브라우저 SSH의 탈출구로 `35.235.240.0/20`도 함께 둔다).
+
+**내 컴퓨터에서 직접 `ssh parknic`으로 접속하려면** 이 VM 전용 키를 만들고 `~/.ssh/config`에 항목을 둔다.
+
+```bash
+ssh-keygen -t ed25519 -f ~/.ssh/parknic_gcp -N "" -C "<사용자>@parknic-gcp"   # 키 끝의 주석이 VM의 사용자 이름이 된다
+cat ~/.ssh/parknic_gcp.pub                                                  # 이 한 줄을 콘솔 VM 수정 > SSH 키에 등록
+cat >> ~/.ssh/config <<'EOF'
+Host parknic
+    HostName <고정 IP>
+    User <사용자>
+    IdentityFile ~/.ssh/parknic_gcp
+    IdentitiesOnly yes
+    StrictHostKeyChecking accept-new
+EOF
+```
+
+콘솔에서 키 저장 시 `Supplied fingerprint does not match current metadata fingerprint`가 나면 수정 화면을 새로 고치고 바로 저장하거나, **Compute Engine > 설정 > 메타데이터 > SSH 키**(프로젝트 전체)에 등록한다.
 
 ## 2. DNS 연결
 
 도메인의 A 레코드를 고정 IP(`gcloud compute addresses describe parknic-ip --region=asia-northeast3 --format='value(address)'`)로 설정한다.
-DuckDNS를 쓰면 `https://www.duckdns.org/update?domains=<이름>&token=<토큰>&ip=<고정 IP>`로 IP를 바꾼다(토큰은 비밀).
+DuckDNS를 쓰면 duckdns.org에서 이름을 만들고 `current ip`를 고정 IP로 설정한다(또는 `https://www.duckdns.org/update?domains=<이름>&token=<토큰>&ip=<고정 IP>`, 토큰은 비밀). 이 서버는 검증용으로 `parknic-gcp.duckdns.org`를 만들었고, 기존 임시 서버의 `parknic-dev`는 그대로 두었다. 서버에서 `getent hosts <도메인>`이 고정 IP를 돌려주는지 확인한 뒤 시작한다.
 
 **인증서는 DNS가 새 IP를 가리킨 뒤에** 발급된다. 먼저 서버를 시작하면 발급이 실패하고 Caddy가 재시도한다(문제는 없지만 실패 횟수가 쌓이면 일정 시간 막힐 수 있다).
 
 ## 3. 서버 준비 (VM 안에서)
 
 ```bash
-gcloud compute ssh parknic --zone=asia-northeast3-a
+ssh parknic                     # 위에서 만든 ~/.ssh/config 항목 (또는 gcloud compute ssh 또는 콘솔 SSH 버튼)
 
-# 도커 설치 (공식 설치 스크립트)
+# 보안 업데이트와 도커 설치 (공식 설치 스크립트). 재부팅하면 도커 그룹 권한과 커널 업데이트가 적용된다
+sudo apt-get update && sudo DEBIAN_FRONTEND=noninteractive apt-get -y upgrade
 curl -fsSL https://get.docker.com | sudo sh
-sudo usermod -aG docker $USER   # 다시 로그인해야 적용
+sudo usermod -aG docker $USER
+sudo reboot
+# 1분 뒤 다시 ssh parknic 으로 접속해서 확인: docker --version, docker compose version, docker run --rm hello-world
+```
 
-git clone https://github.com/Parknic-APP/Parknic-Server.git ~/parknic
+### 저장소 가져오기 (비공개 저장소)
+조직(`Parknic-APP`)의 정책이 **Deploy keys를 막아 둘 수 있다**(저장소 Settings > Deploy keys에 "Disabled by Parknic-APP"이 보이고 `Add deploy key` 버튼이 없음). 이 경우 **fine-grained 개인 액세스 토큰**을 읽기 전용으로 만든다.
+
+1. GitHub 프로필 사진 > Settings > Developer settings > Personal access tokens > Fine-grained tokens > Generate new token
+2. Resource owner: **`Parknic-APP`**(개인 계정을 고르면 조직 저장소에 접근할 수 없어서 404가 난다), Repository access: `Only select repositories` > `Parknic-Server`, Permissions: **Contents: Read-only**, 만료일 설정
+3. 토큰(`github_pat_...`)은 한 번만 보이므로 복사해 둔다. **채팅이나 쉘 기록에 남기지 않는다.**
+
+```bash
+# 토큰이 유효하고 저장소 접근이 되는지 먼저 확인 (200이면 정상, 401은 토큰 오류, 404는 권한 없음)
+read -rs TOKEN; echo; echo "토큰 길이: ${#TOKEN}"          # fine-grained 토큰은 93자 안팎. 0이면 붙여 넣기가 안 된 것
+curl -s -o /dev/null -w '저장소 접근: HTTP %{http_code}\n' -H "Authorization: Bearer $TOKEN" https://api.github.com/repos/Parknic-APP/Parknic-Server
+unset TOKEN
+
+git clone https://github.com/Parknic-APP/Parknic-Server.git ~/parknic     # Username: GitHub 사용자 이름, Password: 위 토큰
 cd ~/parknic
+git config credential.helper 'cache --timeout=3600'                        # 1시간만 메모리에 보관(디스크에 저장하지 않음)
+```
+
+### `.env` 만들기 (비밀값은 서버에서 생성)
+```bash
 cp .env.example .env
 chmod 600 .env                  # 비밀값이 있으므로 소유자만 읽게
-nano .env
+set_env() { sed -i "s|^$1=.*|$1=$2|" .env; }
+set_env DOMAIN <도메인>
+set_env DB_NAME parknic
+set_env DB_USERNAME parknic
+set_env DB_PASSWORD "$(openssl rand -hex 24)"
+set_env JWT_SECRET "$(openssl rand -hex 48)"
+awk -F= '/^[A-Z_]+=/ {print $1, "(길이", length($2) ")"}' .env    # 값은 출력하지 않고 길이만 확인
 ```
 
 `.env`에 채울 값
@@ -88,7 +137,7 @@ docker compose -f docker-compose.prod.yaml --env-file .env logs -f app   # Flywa
 curl https://<DOMAIN>/actuator/health                                   # {"status":"UP",...}
 ```
 
-새 DB에는 공원 데이터가 없다. 한 번 적재한다(공원 CSV `parks.csv`가 필요).
+새 DB에는 공원 데이터가 없다. 한 번 적재한다(공원 CSV `parks.csv`가 필요). 내 컴퓨터에서 `scp parks.csv parknic:~/parks.csv`로 복사한 뒤 서버에서 실행한다.
 
 ```bash
 # CSV를 VM에 복사한 뒤, 일회성 컨테이너로 적재 (앱과 같은 DB를 사용). 이미지의 실행 명령(java -jar app.jar)에 인자만 이어 붙인다
@@ -99,7 +148,7 @@ docker logs -f parknic-import      # "park import: 읽음 ... 최종 ..." 줄이
 docker rm -f parknic-import        # 적재가 끝나도 서버는 계속 떠 있으므로 직접 정리한다
 ```
 
-적재 후 `select count(*) from parks`가 17,012건 안팎인지 본다. (로컬에서 같은 방식으로 적재가 되는 것은 확인했다. VM에서는 확인되지 않음)
+적재 후 `select count(*) from parks`가 17,012건인지 본다(실제 VM에서 확인됨). 적재용 컨테이너는 앱과 같은 환경변수(DB 비밀번호 포함)를 쓰므로 끝나면 `docker rm -f parknic-import`로 지우고, 서버의 `~/parks.csv`도 지운다.
 
 ## 5. 백업
 
@@ -113,7 +162,7 @@ Cloud Storage 버킷은 한 번만 만든다. **보관 기간은 버킷의 수�
 
 ```bash
 BUCKET=<버킷 이름>
-# 서울 리전에 만들고, 객체를 지우거나 덮어쓰지 못하는 VM 서비스 계정 권한(objectCreator)만 준다
+# 서울 리전에 만들고, 객체를 지우거나 덮어쓰지 못하는 VM 서비스 계정 권한(생성 + 조회)만 준다
 gcloud storage buckets create gs://$BUCKET --location=asia-northeast3 --uniform-bucket-level-access
 gcloud storage buckets update gs://$BUCKET --lifecycle-file=scripts/gcs-lifecycle.json
 gcloud storage buckets describe gs://$BUCKET --format='value(lifecycle_config)'   # 규칙이 적용됐는지 확인
@@ -121,17 +170,24 @@ gcloud storage buckets describe gs://$BUCKET --format='value(lifecycle_config)' 
 # VM이 쓰는 서비스 계정에 업로드 권한 부여 (계정 이름은 `gcloud compute instances describe parknic --zone=... --format='value(serviceAccounts[0].email)'`)
 gcloud storage buckets add-iam-policy-binding gs://$BUCKET \
   --member=serviceAccount:<서비스 계정> --role=roles/storage.objectCreator
+gcloud storage buckets add-iam-policy-binding gs://$BUCKET \
+  --member=serviceAccount:<서비스 계정> --role=roles/storage.objectViewer
 ```
 
-(위 명령은 실제 GCP 계정에서 확인되지 않았다.) VM에서 업로드하려면 VM이 Cloud Storage 접근 범위로 만들어져 있어야 한다(`gcloud compute instances create`의 `--scopes=storage-rw`, 또는 이후 `gcloud compute instances set-service-account`). 범위가 없으면 `backup-db.sh`의 `gcloud storage cp`가 권한 오류로 실패한다.
+**두 역할이 모두 필요하다.** `objectCreator`만 있으면 `gcloud storage cp`가 업로드 전에 같은 이름의 객체가 있는지 조회(`storage.objects.get`)하다가 403으로 실패한다. 반대로 `objectViewer`만 있으면 `storage.objects.create`가 거절된다. 두 역할을 합치면 생성과 조회는 되고, **덮어쓰기와 삭제(`storage.objects.delete`)는 되지 않아서** 서버가 뚫려도 공격자가 기존 백업을 지우거나 덮어쓰지 못한다(실제 VM에서 확인됨: 업로드는 성공하고 덮어쓰기와 삭제는 거절). 콘솔에서는 역할 이름이 "저장소 개체 만들기(생성자)"와 "저장소 개체 뷰어"로 보인다.
 
-매일 새벽 3시에 실행하려면 `crontab -e`에 추가한다.
+(콘솔로 같은 설정을 해서 업로드가 되는 것을 확인했다. 위 `gcloud` 명령 자체를 실행해 본 것은 아니다.) VM에서 업로드하려면 VM이 Cloud Storage 접근 범위로 만들어져 있어야 한다(`gcloud compute instances create`의 `--scopes=storage-rw`, 또는 이후 `gcloud compute instances set-service-account`). 범위가 없으면 `backup-db.sh`의 `gcloud storage cp`가 권한 오류로 실패한다.
+
+매일 새벽 3시에 실행하려면 크론에 등록한다. **크론의 기본 `PATH`에는 `/snap/bin`이 없는데 `gcloud`가 snap으로 설치되어 있으므로, 크론 파일 맨 위에 `PATH`를 지정해야 한다.** 그렇지 않으면 크론에서만 `gcloud`를 못 찾아 업로드가 실패한다. 실제 VM에서 아래처럼 등록했고, 크론과 같은 최소 환경(`env -i`)에서 업로드까지 성공하는 것을 확인했다.
 
 ```
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/snap/bin
 0 3 * * * cd /home/<사용자>/parknic && GCS_BUCKET=<버킷 이름> scripts/backup-db.sh >> backups/backup.log 2>&1
 ```
 
-- 같은 디스크에만 두면 VM이 사라질 때 백업도 사라진다. Cloud Storage 버킷(수명 주기 규칙으로 보관 기간 지정)에 올리는 것을 권한다. 업로드에는 VM의 서비스 계정에 해당 버킷의 쓰기 권한이 있어야 한다.
+(`crontab -e`로 직접 편집해도 되고, 위 두 줄을 파일에 저장해 `crontab <파일>`로 등록해도 된다.)
+
+- 같은 디스크에만 두면 VM이 사라질 때 백업도 사라진다. Cloud Storage 버킷(수명 주기 규칙으로 보관 기간 지정)에 올리는 것을 권한다. 업로드에는 VM의 서비스 계정에 해당 버킷의 **생성과 조회 권한**이 있어야 한다(아래 설명).
 - 스크립트가 실패하면(`pg_dump` 오류, 읽을 수 없는 덤프) 0이 아닌 코드로 끝나서 로그(`backup.log`)에 남는다. 실패를 알림으로 받으려면 Cloud Monitoring 로그 기반 알림 등을 따로 설정한다.
 - **복구를 연습한다.** 백업은 복구해 봐야 믿을 수 있다. 분기에 한 번은 별도 환경에서 `restore-db.sh`로 되살려 본다.
 
