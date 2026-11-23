@@ -1,5 +1,6 @@
 package com.seongmo.parknic.checkin.service;
 
+import com.seongmo.parknic.achievement.service.AchievementService;
 import com.seongmo.parknic.checkin.config.CheckinProperties;
 import com.seongmo.parknic.checkin.dto.*;
 import com.seongmo.parknic.checkin.entity.Badge;
@@ -40,6 +41,7 @@ public class CheckinService {
     private final BadgeRepository badgeRepository;
     private final CheckinProperties checkinProperties;
     private final RankingService rankingService;
+    private final AchievementService achievementService;
     private final Clock clock;
 
     @Transactional
@@ -162,11 +164,16 @@ public class CheckinService {
         // 방금 저장한 배지가 포함된 순위
         WeeklyStanding after = rankingService.getStanding(userId, park.getId(), today);
 
-        // 업적을 만들기 전까지는 고정값
+        // 방금 저장한 배지가 포함된 개수로 새 업적 지급
+        List<CompleteCheckinResponse.AchievementInfo> newAchievements =
+                achievementService.grantNewAchievements(userId, now).stream()
+                        .map(a -> new CompleteCheckinResponse.AchievementInfo(a.getCode(), a.getName()))
+                        .toList();
+
         return new CompleteCheckinResponse(
                 new CompleteCheckinResponse.BadgeInfo(
                         park.getId(), park.getName(), park.getParkType(), now.atZone(Kst.ZONE).toOffsetDateTime()),
-                List.of(),
+                newAchievements,
                 toWeeklyRankingInfo(before, after),
                 true);
     }
