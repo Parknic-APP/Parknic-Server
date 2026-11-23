@@ -14,9 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
-import java.time.DayOfWeek;
 import java.time.LocalDate;
-import java.time.temporal.TemporalAdjusters;
 import java.util.List;
 
 @Service
@@ -36,7 +34,7 @@ public class RankingService {
             throw new BusinessException(ErrorCode.NOT_FOUND);
         }
 
-        LocalDate weekStart = weekStartOf(week != null ? week : Kst.today(clock));
+        LocalDate weekStart = Kst.weekStartOf(week != null ? week : Kst.today(clock));
         LocalDate weekEnd = weekStart.plusDays(6);
 
         List<RankingEntryResponse> rows =
@@ -55,7 +53,7 @@ public class RankingService {
     // 체크인 완료 응답용: 그 날짜가 속한 주의 내 순위와 3위의 배지 개수
     @Transactional(readOnly = true)
     public WeeklyStanding getStanding(Long userId, Long parkId, LocalDate date) {
-        LocalDate weekStart = weekStartOf(date);
+        LocalDate weekStart = Kst.weekStartOf(date);
 
         // 상위 3명과 내 행만 가져옴
         List<RankingEntryResponse> rows =
@@ -68,10 +66,6 @@ public class RankingService {
                 .orElse(0);
 
         return new WeeklyStanding(findMe(rows, userId), thirdBadgeCount);
-    }
-
-    private LocalDate weekStartOf(LocalDate date) {
-        return date.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
     }
 
     private MyRankingResponse findMe(List<RankingEntryResponse> rows, Long userId) {

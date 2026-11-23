@@ -2,16 +2,19 @@ package com.seongmo.parknic.user.service;
 
 import com.seongmo.parknic.auth.service.AuthService;
 import com.seongmo.parknic.character.repository.CharacterRepository;
+import com.seongmo.parknic.checkin.repository.BadgeRepository;
 import com.seongmo.parknic.common.error.BusinessException;
 import com.seongmo.parknic.common.error.ErrorCode;
 import com.seongmo.parknic.common.time.Kst;
 import com.seongmo.parknic.user.dto.NicknameCheckResponse;
 import com.seongmo.parknic.user.dto.UpdateProfileRequest;
 import com.seongmo.parknic.user.dto.UserProfileResponse;
+import com.seongmo.parknic.user.dto.UserStatsResponse;
 import com.seongmo.parknic.user.entity.User;
 import com.seongmo.parknic.user.entity.UserStatus;
 import com.seongmo.parknic.user.repository.UserBlockRepository;
 import com.seongmo.parknic.user.repository.UserRepository;
+import com.seongmo.parknic.user.repository.UserStatsQueryRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.NestedExceptionUtils;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -19,6 +22,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
+import java.time.LocalDate;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -31,6 +36,8 @@ public class UserService {
     private final NicknameFilter nicknameFilter;
     private final AuthService authService;
     private final UserBlockRepository userBlockRepository;
+    private final BadgeRepository badgeRepository;
+    private final UserStatsQueryRepository userStatsQueryRepository;
     private final Clock clock;
 
     @Transactional
@@ -113,5 +120,20 @@ public class UserService {
     @Transactional
     public void unblock(Long userId, Long targetId) {
         userBlockRepository.delete(userId, targetId);
+    }
+
+    @Transactional(readOnly = true)
+    public UserStatsResponse getStats(Long userId) {
+        LocalDate today = Kst.today(clock);
+        LocalDate weekStart = Kst.weekStartOf(today);
+
+        List<LocalDate> badgeDates = userStatsQueryRepository.findBadgeDates(userId);
+
+        return new UserStatsResponse(
+                (int) badgeRepository.countByUserId(userId),
+                (int) badgeRepository.countDistinctParkByUserId(userId),
+                StreakCalculator.current(badgeDates, today),
+                StreakCalculator.best(badgeDates),
+                userStatsQueryRepository.countPodiumParks(userId, weekStart, weekStart.plusDays(6)));
     }
 }

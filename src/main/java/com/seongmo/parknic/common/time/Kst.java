@@ -1,11 +1,9 @@
 package com.seongmo.parknic.common.time;
 
-import java.time.Clock;
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.ZoneId;
+import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
+import java.time.temporal.TemporalAdjusters;
 
 public class Kst {
 
@@ -34,5 +32,10 @@ public class Kst {
     // 응답용 문자열 : 2026-11-12T15:32:10+09:00 (초 단위)
     public static String format(Instant instant) {
         return ISO_SECONDS.format(instant.truncatedTo(ChronoUnit.SECONDS));
+    }
+
+    // 그 날짜가 속한 주의 월요일
+    public static LocalDate weekStartOf(LocalDate date) {
+        return date.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
     }
 }
