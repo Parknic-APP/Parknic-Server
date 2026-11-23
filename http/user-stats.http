@@ -1,0 +1,13 @@
+### 순서: auth.http에서 개발용 로그인(test1)을 먼저 실행해 token1을 만든다
+### 사전 준비: 배지(badges) 데이터가 필요하다. 날짜가 이어졌다 끊긴 배지를 DB에 직접 넣어서 확인한다
+
+### 내 통계 -> 200 { totalBadges, visitedParks, currentStreak, bestStreak, podiumParks }. 배지가 없으면 모두 0
+### - totalBadges: 배지 행 수, visitedParks: 서로 다른 공원 수
+### - currentStreak: 오늘 또는 어제까지 이어진 연속 일수(어제도 오늘도 없으면 0), bestStreak: 가장 길었던 연속 일수
+### - 하루에 배지를 여러 개 받아도 그날은 1일
+### - podiumParks: 이번 주(월~일, KST) 공원별 랭킹에서 내가 1~3위인 공원 수 (4위 이하와 지난 주 배지만 있는 공원은 제외)
+GET {{baseUrl}}/api/users/me/stats
+Authorization: Bearer {{token1}}
+
+### 내 통계 - 토큰 없음 -> 401
+GET {{baseUrl}}/api/users/me/stats
