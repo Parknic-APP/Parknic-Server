@@ -28,6 +28,7 @@ services:
       DB_USERNAME: ${DB_USERNAME}
       DB_PASSWORD: ${DB_PASSWORD}
       JWT_SECRET: ${JWT_SECRET}
+      REVIEW_MODE: ${REVIEW_MODE:-false}
       APPLE_CLIENT_ID: ${APPLE_CLIENT_ID:-com.hwangsanghwan.parknic}
       APPLE_TEAM_ID: ${APPLE_TEAM_ID:-}
       APPLE_KEY_ID: ${APPLE_KEY_ID:-}
