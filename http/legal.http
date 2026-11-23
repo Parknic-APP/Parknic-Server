@@ -1,0 +1,15 @@
+### 공개 페이지: 로그인 없이 열린다 (앱과 스토어가 URL로 사용)
+### - 내용은 임시 서버(parknic-dev.duckdns.org)의 현재 페이지와 같다. 문구는 src/main/resources/legal/*.html에서 바꾼다
+### - 방침과 약관 문구를 바꿀 때는 페이지가 약속한 "시행 7일 전 고지"를 지킨다
+
+### 이용약관 -> 200 text/html;charset=UTF-8
+GET {{baseUrl}}/terms
+
+### 개인정보 처리방침 -> 200 text/html;charset=UTF-8
+GET {{baseUrl}}/privacy
+
+### 고객 지원 -> 200 text/html;charset=UTF-8
+GET {{baseUrl}}/support
+
+### 공개 페이지가 아닌 API는 여전히 인증이 필요하다 -> 401
+GET {{baseUrl}}/api/parks/1
