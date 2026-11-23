@@ -1,0 +1,21 @@
+### 순서: auth.http에서 개발용 로그인(test1)을 먼저 실행해 token1을 만든다
+### 사전 준비: 리뷰(reviews) 데이터가 필요하다. 한 공원에 10명 이상의 리뷰를 DB에 직접 넣어서 확인한다
+
+### 리뷰 좋은 공원 -> 200 { parks: [{ id, name, parkType, latitude, longitude, radiusM, distanceM, averageRating, reviewCount, myStatus, myBadgeCount }] }
+### - 리뷰 10개 이상 && 평균 4.5 이상인 공원만 (숨김 리뷰와 탈퇴한 사용자의 리뷰는 세지 않고, 심사용 공원은 제외)
+### - 별점 높은 순, 같으면 리뷰 많은 순, 그래도 같으면 가까운 순. 최대 50곳
+### - averageRating은 소수 첫째 자리 반올림, 기준 비교는 반올림 전 평균(4.5 이상)
+### - radius 기본 5000, 100~5000으로 보정
+GET {{baseUrl}}/api/parks/top-rated?lat=37.517396&lng=126.983984
+Authorization: Bearer {{token1}}
+
+### 리뷰 좋은 공원 - 반경 지정 -> 200 (1000m 안의 공원만)
+GET {{baseUrl}}/api/parks/top-rated?lat=37.517396&lng=126.983984&radius=1000
+Authorization: Bearer {{token1}}
+
+### 리뷰 좋은 공원 - lat/lng 누락 -> 400 INVALID_REQUEST
+GET {{baseUrl}}/api/parks/top-rated
+Authorization: Bearer {{token1}}
+
+### 리뷰 좋은 공원 - 토큰 없음 -> 401
+GET {{baseUrl}}/api/parks/top-rated?lat=37.517396&lng=126.983984
