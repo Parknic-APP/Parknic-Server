@@ -58,6 +58,10 @@ public class User {
         }
     }
 
+    public void updateAppleRefreshToken(String appleRefreshToken) {
+        this.appleRefreshToken = appleRefreshToken;
+    }
+
     public void withdraw() {
         this.status = UserStatus.DELETED;
         this.nickname = null;

@@ -1,5 +1,6 @@
 package com.seongmo.parknic.user.service;
 
+import com.seongmo.parknic.auth.service.AppleAuthClient;
 import com.seongmo.parknic.auth.service.AuthService;
 import com.seongmo.parknic.character.repository.CharacterRepository;
 import com.seongmo.parknic.checkin.repository.BadgeRepository;
@@ -35,6 +36,7 @@ public class UserService {
     private final CharacterRepository characterRepository;
     private final NicknameFilter nicknameFilter;
     private final AuthService authService;
+    private final AppleAuthClient appleAuthClient;
     private final UserBlockRepository userBlockRepository;
     private final BadgeRepository badgeRepository;
     private final UserStatsQueryRepository userStatsQueryRepository;
@@ -98,8 +100,14 @@ public class UserService {
         User user = userRepository.findByIdAndStatusNot(userId, UserStatus.DELETED)
                 .orElseThrow(() -> new BusinessException(ErrorCode.UNAUTHORIZED));
 
+        String appleRefreshToken = user.getAppleRefreshToken();
         authService.logout(userId);
         user.withdraw();
+
+        // 저장된 Apple 토큰이 있으면 Apple 쪽 연결도 끊는다. 실패해도 탈퇴는 그대로 진행
+        if (appleRefreshToken != null) {
+            appleAuthClient.revoke(appleRefreshToken);
+        }
     }
 
     @Transactional
