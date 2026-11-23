@@ -7,6 +7,7 @@ import com.seongmo.parknic.park.dto.ParkDetailResponse;
 import com.seongmo.parknic.park.dto.ParkListResponse;
 import com.seongmo.parknic.park.dto.ParkMyBadge;
 import com.seongmo.parknic.park.dto.ParkReviewStats;
+import com.seongmo.parknic.park.dto.TopRatedParkListResponse;
 import com.seongmo.parknic.park.entity.Park;
 import com.seongmo.parknic.park.repository.ParkQueryRepository;
 import com.seongmo.parknic.park.repository.ParkRepository;
@@ -41,5 +42,12 @@ public class ParkService {
     public ParkListResponse getNearbyParks(Long userId, double lat, double lng, int radius) {
         int radiusM = Math.max(MIN_RADIUS_M, Math.min(MAX_RADIUS_M, radius));
         return new ParkListResponse(parkQueryRepository.findNearby(userId, Kst.today(clock), lat, lng, radiusM));
+    }
+
+    @Transactional(readOnly = true)
+    public TopRatedParkListResponse getTopRatedParks(Long userId, double lat, double lng, int radius) {
+        int radiusM = Math.max(MIN_RADIUS_M, Math.min(MAX_RADIUS_M, radius));
+        return new TopRatedParkListResponse(
+                parkQueryRepository.findTopRated(userId, Kst.today(clock), lat, lng, radiusM));
     }
 }
