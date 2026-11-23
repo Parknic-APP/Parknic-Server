@@ -47,3 +47,8 @@ dependencies {
 tasks.named('test') {
     useJUnitPlatform()
 }
+
+// 컨테이너 이미지에서 jar 이름이 버전과 상관없이 고정되도록
+tasks.named('bootJar') {
+    archiveFileName = 'app.jar'
+}

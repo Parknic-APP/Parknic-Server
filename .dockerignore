@@ -1,0 +1,17 @@
+.git
+.gitignore
+.gitattributes
+.github
+.idea
+.gradle
+build
+http
+.env
+.env.*
+!.env.example
+*.p8
+pr.md
+README.md
+docker-compose*.yaml
+Dockerfile
+.DS_Store
