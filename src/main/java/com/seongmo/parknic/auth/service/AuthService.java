@@ -28,6 +28,7 @@ public class AuthService {
 
     private static final String DEV_PREFIX = "dev:";
     private static final String DEV_PROVIDER = "DEV";
+    private static final String APPLE_PROVIDER = "APPLE";
     private static final Duration REFRESH_TOKEN_TTL = Duration.ofDays(30);
 
     private final UserRepository userRepository;
@@ -36,13 +37,15 @@ public class AuthService {
     private final DevLoginProperties devLoginProperties;
     private final RefreshTokenGenerator refreshTokenGenerator;
     private final RefreshTokenRepository refreshTokenRepository;
+    private final AppleTokenVerifier appleTokenVerifier;
 
     @Transactional
     public LoginResponse loginApple(LoginRequest request) {
-        String name = extractDevName(request.token());
+        Identity identity = resolveIdentity(request.token());
 
-        User user = userRepository.findByProviderAndProviderId(DEV_PROVIDER, name)
-                .orElseGet(() -> userRepository.save(User.pending(DEV_PROVIDER, name, clock.instant())));
+        User user = userRepository.findByProviderAndProviderId(identity.provider(), identity.providerId())
+                .orElseGet(() -> userRepository.save(
+                        User.pending(identity.provider(), identity.providerId(), clock.instant())));
 
         if (user.getStatus() == UserStatus.DELETED) {
             user.rejoin();
@@ -61,10 +64,15 @@ public class AuthService {
         return rawToken;
     }
 
-    private String extractDevName(String token) {
-        if (!devLoginProperties.enabled() || !token.startsWith(DEV_PREFIX)) {
-            throw new BusinessException(ErrorCode.UNAUTHORIZED);
+    // 개발용 로그인이 켜져 있고 dev: 토큰이면 개발용, 그 외에는 Apple 토큰으로 보고 검증
+    private Identity resolveIdentity(String token) {
+        if (devLoginProperties.enabled() && token.startsWith(DEV_PREFIX)) {
+            return new Identity(DEV_PROVIDER, extractDevName(token));
         }
+        return new Identity(APPLE_PROVIDER, appleTokenVerifier.verify(token));
+    }
+
+    private String extractDevName(String token) {
         String name = token.substring(token.lastIndexOf(':') + 1);
         if (name.isBlank()) {
             throw new BusinessException(ErrorCode.INVALID_REQUEST);
@@ -99,4 +107,7 @@ public class AuthService {
     public void logout(Long userId) {
         refreshTokenRepository.deleteByUserId(userId);
     }
+
+    // 로그인한 소셜 계정을 식별하는 값 (provider + provider가 준 고유 ID)
+    private record Identity(String provider, String providerId) { }
 }
