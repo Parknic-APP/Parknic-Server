@@ -1,5 +1,6 @@
 package com.seongmo.parknic.support;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
@@ -14,7 +15,10 @@ import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import com.jayway.jsonpath.JsonPath;
+import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.ResultActions;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 
 /**
@@ -142,5 +146,25 @@ public abstract class IntegrationTest {
                 .param("reviewId", reviewId)
                 .param("reporterId", reporterId)
                 .update();
+    }
+
+    /**
+     * 체크인을 시작하고 20분이 지난 뒤 완료 요청을 보낸다. 시계는 20분 앞으로 옮겨진다.
+     * 시작이 실패하면 예외를 던지고, 완료 응답(ResultActions)을 돌려준다.
+     */
+    protected ResultActions checkInAndComplete(long userId, long parkId, double lat, double lng) throws Exception {
+        String started = mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/api/check-ins")
+                        .header("Authorization", bearer(userId))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"parkId\":%d,\"lat\":%s,\"lng\":%s}".formatted(parkId, lat, lng)))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isOk())
+                .andReturn().getResponse().getContentAsString();
+        long sessionId = JsonPath.<Number>read(started, "$.id").longValue();
+        clock.advance(Duration.ofMinutes(20));
+        return mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                .post("/api/check-ins/{id}/complete", sessionId)
+                .header("Authorization", bearer(userId))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"lat\":%s,\"lng\":%s,\"pausedSeconds\":0}".formatted(lat, lng)));
     }
 }
