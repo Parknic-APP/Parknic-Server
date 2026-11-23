@@ -27,7 +27,8 @@ public class ParkQueryRepository {
 
     private final JdbcClient jdbcClient;
 
-    public List<ParkSummaryResponse> findNearby(Long userId, LocalDate today, double lat, double lng, int radiusM) {
+    public List<ParkSummaryResponse> findNearby(Long userId, LocalDate today, double lat, double lng, int radiusM,
+                                                boolean includeReviewOnly) {
         double latDelta = radiusM / METERS_PER_DEGREE;
         double lngDelta = radiusM / (METERS_PER_DEGREE * Math.cos(Math.toRadians(lat)));
 
@@ -44,7 +45,7 @@ public class ParkQueryRepository {
                                                            * power(sin(radians(longitude - :lng) / 2), 2)
                                                        )) AS distance_m
                                                 FROM parks
-                                                WHERE review_only = FALSE
+                                                WHERE (review_only = FALSE OR :includeReviewOnly)
                                                   AND latitude BETWEEN :minLat AND :maxLat
                                                   AND longitude BETWEEN :minLng AND :maxLng
                                             ) nearby
@@ -70,6 +71,7 @@ public class ParkQueryRepository {
                 .param("userId", userId)
                 .param("today", today)
                 .param("radius", radiusM)
+                .param("includeReviewOnly", includeReviewOnly)
                 .param("limit", MAX_RESULTS)
                 .query((rs, rowNum) -> {
                     long badgeCount = rs.getLong("badge_count");

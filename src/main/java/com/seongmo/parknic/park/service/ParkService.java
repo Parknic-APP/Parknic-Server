@@ -27,10 +27,12 @@ public class ParkService {
     private final Clock clock;
     private final ParkRepository parkRepository;
     private final ParkQueryRepository parkQueryRepository;
+    private final ParkVisibility parkVisibility;
 
     @Transactional(readOnly = true)
     public ParkDetailResponse getPark(Long userId, Long parkId) {
         Park park = parkRepository.findById(parkId)
+                .filter(parkVisibility::isVisible)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
 
         ParkMyBadge myBadge = parkQueryRepository.findMyBadge(userId, parkId, Kst.today(clock));
@@ -41,7 +43,8 @@ public class ParkService {
     @Transactional(readOnly = true)
     public ParkListResponse getNearbyParks(Long userId, double lat, double lng, int radius) {
         int radiusM = Math.max(MIN_RADIUS_M, Math.min(MAX_RADIUS_M, radius));
-        return new ParkListResponse(parkQueryRepository.findNearby(userId, Kst.today(clock), lat, lng, radiusM));
+        return new ParkListResponse(parkQueryRepository.findNearby(
+                userId, Kst.today(clock), lat, lng, radiusM, parkVisibility.isReviewMode()));
     }
 
     @Transactional(readOnly = true)
