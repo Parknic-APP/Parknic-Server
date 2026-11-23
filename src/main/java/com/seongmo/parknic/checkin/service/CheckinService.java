@@ -13,6 +13,9 @@ import com.seongmo.parknic.common.geo.GeoDistance;
 import com.seongmo.parknic.common.time.Kst;
 import com.seongmo.parknic.park.entity.Park;
 import com.seongmo.parknic.park.repository.ParkRepository;
+import com.seongmo.parknic.ranking.dto.MyRankingResponse;
+import com.seongmo.parknic.ranking.dto.WeeklyStanding;
+import com.seongmo.parknic.ranking.service.RankingService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.NestedExceptionUtils;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -22,6 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.List;
 
 @Service
@@ -35,6 +39,7 @@ public class CheckinService {
     private final ParkRepository parkRepository;
     private final BadgeRepository badgeRepository;
     private final CheckinProperties checkinProperties;
+    private final RankingService rankingService;
     private final Clock clock;
 
     @Transactional
@@ -136,7 +141,12 @@ public class CheckinService {
             throw new BusinessException(ErrorCode.CHECKIN_TOO_EARLY);
         }
 
-        Badge badge = Badge.earn(userId, park.getId(), Kst.dateOf(now), now);
+        LocalDate today = Kst.dateOf(now);
+
+        // 이번 배지를 받기 전의 순위 (rankChange 계산용)
+        WeeklyStanding before = rankingService.getStanding(userId, park.getId(), today);
+
+        Badge badge = Badge.earn(userId, park.getId(), today, now);
         try {
             // 커밋을 기다리지 않고 INSERT를 지금 보내서, 동시 요청이 만든 UNIQUE 위반을 이 안에서 잡도록 함
             badgeRepository.saveAndFlush(badge);
@@ -149,12 +159,30 @@ public class CheckinService {
         }
         session.complete(now);
 
-        // 업적과 주간 랭킹을 만들기 전까지는 고정값
+        // 방금 저장한 배지가 포함된 순위
+        WeeklyStanding after = rankingService.getStanding(userId, park.getId(), today);
+
+        // 업적을 만들기 전까지는 고정값
         return new CompleteCheckinResponse(
                 new CompleteCheckinResponse.BadgeInfo(
                         park.getId(), park.getName(), park.getParkType(), now.atZone(Kst.ZONE).toOffsetDateTime()),
                 List.of(),
-                new CompleteCheckinResponse.WeeklyRankingInfo(1, 1, 0, 0),
+                toWeeklyRankingInfo(before, after),
                 true);
+    }
+
+    private CompleteCheckinResponse.WeeklyRankingInfo toWeeklyRankingInfo(WeeklyStanding before, WeeklyStanding after) {
+        // 방금 배지를 받았으므로 after.me()는 항상 있음
+        MyRankingResponse me = after.me();
+
+        // 이번 주 첫 배지면 비교할 이전 순위가 없음
+        int rankChange = before.me() == null ? 0 : before.me().rank() - me.rank();
+
+        // 동점이면 먼저 도달한 사람이 위라서 3위와 같은 개수로는 넘을 수 없음
+        int badgesToPodium = me.rank() <= RankingService.PODIUM_SIZE
+                ? 0
+                : after.thirdBadgeCount() - me.badgeCount() + 1;
+
+        return new CompleteCheckinResponse.WeeklyRankingInfo(me.rank(), me.badgeCount(), rankChange, badgesToPodium);
     }
 }
