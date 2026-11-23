@@ -23,4 +23,7 @@ public class Achievement {
 
     @Column(nullable = false)
     private int threshold;
+
+    @Column(nullable = false, length = 10)
+    private String label;
 }
