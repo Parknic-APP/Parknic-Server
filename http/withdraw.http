@@ -24,11 +24,11 @@ Authorization: Bearer {{token3}}
 }
 
 ### 탈퇴 (test3) -> 200
-### DB: status=DELETED, nickname=null, refresh_tokens 행 0개
+### DB: users 행과 연결된 데이터(배지, 체크인, 리뷰, 신고, 차단, 업적, 로그인 토큰)가 모두 삭제됨. 이 사용자의 Apple 토큰이 있으면 Apple 연결도 해제
 DELETE {{baseUrl}}/api/users/me
 Authorization: Bearer {{token3}}
 
-### 탈퇴 후 내 정보 조회 -> 401
+### 탈퇴 후 내 정보 조회 -> 401 (탈퇴 전에 받은 액세스 토큰은 서명상 유효하지만 사용자가 없어서 모든 API가 401)
 GET {{baseUrl}}/api/users/me
 Authorization: Bearer {{token3}}
 
@@ -51,7 +51,7 @@ Authorization: Bearer {{token2}}
 ### 탈퇴 - 토큰 없음 -> 401
 DELETE {{baseUrl}}/api/users/me
 
-### 탈퇴한 계정으로 다시 로그인 (test3) -> 200, isNewUser: true. token3, refreshToken3을 새 값으로 저장
+### 탈퇴한 계정으로 다시 로그인 (test3) -> 200, isNewUser: true. 이전 데이터는 복구되지 않는 새 사용자(새 id). token3, refreshToken3을 새 값으로 저장
 POST {{baseUrl}}/api/auth/login/apple
 Content-Type: application/json
 
@@ -64,7 +64,7 @@ Content-Type: application/json
     client.global.set("refreshToken3", response.body.refreshToken);
 %}
 
-### 다시 가입한 내 정보 -> 200, nickname과 characterId가 null
+### 다시 가입한 내 정보 -> 200, nickname과 characterId가 null (이전 프로필과 데이터는 없음)
 GET {{baseUrl}}/api/users/me
 Authorization: Bearer {{token3}}
 
