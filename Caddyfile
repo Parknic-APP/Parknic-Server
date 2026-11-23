@@ -1,0 +1,5 @@
+# DOMAIN 환경변수의 도메인으로 오는 요청을 app 컨테이너로 전달하고 HTTPS 인증서를 자동 발급/갱신한다
+{$DOMAIN} {
+	encode gzip
+	reverse_proxy app:8080
+}
