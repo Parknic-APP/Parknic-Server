@@ -4,6 +4,8 @@ import com.seongmo.parknic.achievement.entity.Achievement;
 import com.seongmo.parknic.achievement.repository.AchievementRepository;
 import com.seongmo.parknic.achievement.repository.UserAchievementRepository;
 import com.seongmo.parknic.checkin.repository.BadgeRepository;
+import com.seongmo.parknic.common.time.Kst;
+import com.seongmo.parknic.user.service.StreakCalculator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,6 +20,7 @@ public class AchievementService {
 
     private static final String FIRST_BADGE = "FIRST_BADGE";
     private static final String PARKS_PREFIX = "PARKS_";
+    private static final String STREAK_PREFIX = "STREAK_";
 
     private final AchievementRepository achievementRepository;
     private final UserAchievementRepository userAchievementRepository;
@@ -26,12 +29,14 @@ public class AchievementService {
     // 이번 배지로 새로 달성한 업적을 저장하고 돌려줌. 배지가 저장(flush)된 뒤에 호출해야 방금 배지가 개수에 포함됨
     @Transactional
     public List<Achievement> grantNewAchievements(Long userId, Instant now) {
-        long totalBadges = badgeRepository.countByUserId(userId);
-        long visitedParks = badgeRepository.countDistinctParkByUserId(userId);
+        Progress progress = new Progress(
+                badgeRepository.countByUserId(userId),
+                badgeRepository.countDistinctParkByUserId(userId),
+                StreakCalculator.current(badgeRepository.findEarnedDatesByUserId(userId), Kst.dateOf(now)));
 
         List<Achievement> granted = new ArrayList<>();
         for (Achievement achievement : achievementRepository.findAllByOrderByThresholdAsc()) {
-            if (isMet(achievement, totalBadges, visitedParks)
+            if (isMet(achievement, progress)
                     && userAchievementRepository.insertIfAbsent(userId, achievement.getCode(), now)) {
                 granted.add(achievement);
             }
@@ -39,15 +44,20 @@ public class AchievementService {
         return granted;
     }
 
-    private boolean isMet(Achievement achievement, long totalBadges, long visitedParks) {
+    private boolean isMet(Achievement achievement, Progress progress) {
         String code = achievement.getCode();
         if (FIRST_BADGE.equals(code)) {
-            return totalBadges >= achievement.getThreshold();
+            return progress.totalBadges() >= achievement.getThreshold();
         }
         if (code.startsWith(PARKS_PREFIX)) {
-            return visitedParks >= achievement.getThreshold();
+            return progress.visitedParks() >= achievement.getThreshold();
         }
-        // STREAK_7 등 아직 구현하지 않은 업적
+        if (code.startsWith(STREAK_PREFIX)) {
+            return progress.currentStreak() >= achievement.getThreshold();
+        }
         return false;
     }
+
+    // 업적 판정에 쓰는 값. 새 종류의 업적이 생기면 필드를 하나 추가
+    private record Progress(long totalBadges, long visitedParks, int currentStreak) { }
 }

@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDate;
+import java.util.List;
 
 public interface BadgeRepository extends JpaRepository<Badge, Long> {
 
@@ -17,4 +18,7 @@ public interface BadgeRepository extends JpaRepository<Badge, Long> {
     long countDistinctParkByUserId(@Param("userId") Long userId);
 
     long countByUserId(Long userId);
+
+    @Query("select distinct b.earnedDate from Badge b where b.userId = :userId order by b.earnedDate")
+    List<LocalDate> findEarnedDatesByUserId(@Param("userId") Long userId);
 }

@@ -127,7 +127,7 @@ public class UserService {
         LocalDate today = Kst.today(clock);
         LocalDate weekStart = Kst.weekStartOf(today);
 
-        List<LocalDate> badgeDates = userStatsQueryRepository.findBadgeDates(userId);
+        List<LocalDate> badgeDates = badgeRepository.findEarnedDatesByUserId(userId);
 
         return new UserStatsResponse(
                 (int) badgeRepository.countByUserId(userId),
