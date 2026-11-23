@@ -109,6 +109,22 @@ scripts/backup-db.sh                         # ./backups/parknic-YYYYmmdd-HHMMSS
 GCS_BUCKET=<버킷 이름> scripts/backup-db.sh   # Cloud Storage에도 업로드 (VM과 다른 곳에 보관)
 ```
 
+Cloud Storage 버킷은 한 번만 만든다. **보관 기간은 버킷의 수명 주기 규칙이 지킨다**(스크립트의 `KEEP_DAYS`는 VM 안의 `backups/` 폴더만 정리한다). 개인정보 처리방침에 적은 백업 보관 기간과 같은 값을 쓴다(`scripts/gcs-lifecycle.json`은 14일).
+
+```bash
+BUCKET=<버킷 이름>
+# 서울 리전에 만들고, 객체를 지우거나 덮어쓰지 못하는 VM 서비스 계정 권한(objectCreator)만 준다
+gcloud storage buckets create gs://$BUCKET --location=asia-northeast3 --uniform-bucket-level-access
+gcloud storage buckets update gs://$BUCKET --lifecycle-file=scripts/gcs-lifecycle.json
+gcloud storage buckets describe gs://$BUCKET --format='value(lifecycle_config)'   # 규칙이 적용됐는지 확인
+
+# VM이 쓰는 서비스 계정에 업로드 권한 부여 (계정 이름은 `gcloud compute instances describe parknic --zone=... --format='value(serviceAccounts[0].email)'`)
+gcloud storage buckets add-iam-policy-binding gs://$BUCKET \
+  --member=serviceAccount:<서비스 계정> --role=roles/storage.objectCreator
+```
+
+(위 명령은 실제 GCP 계정에서 확인되지 않았다.) VM에서 업로드하려면 VM이 Cloud Storage 접근 범위로 만들어져 있어야 한다(`gcloud compute instances create`의 `--scopes=storage-rw`, 또는 이후 `gcloud compute instances set-service-account`). 범위가 없으면 `backup-db.sh`의 `gcloud storage cp`가 권한 오류로 실패한다.
+
 매일 새벽 3시에 실행하려면 `crontab -e`에 추가한다.
 
 ```
@@ -146,6 +162,7 @@ curl https://<DOMAIN>/actuator/health
 ## 8. 모니터링
 
 - **업타임 체크**: Cloud Monitoring > Uptime checks에서 `https://<DOMAIN>/actuator/health`를 1~5분 간격으로 설정하고, 실패 시 이메일 알림 정책을 연결한다.
+- 로그 보관: 컨테이너 로그는 서비스마다 **10MB x 3개**까지만 보관하고 오래된 것부터 지운다(`docker-compose.prod.yaml`의 `x-logging`). 디스크가 가득 차는 것을 막는 용량 기준이고, 로그가 적은 서비스에서는 이 용량이 오래 걸쳐 쌓일 수 있다. 개인정보 처리방침에도 "기간"이 아니라 "일정 용량이 차면 오래된 것부터 삭제"라고 적는다. 기간으로 보장해야 한다면 Cloud Logging(`_Default` 버킷의 보관 기간을 설정)으로 보내는 방식으로 바꾼다.
 - 로그: `docker compose ... logs -f app`. `unexpected error`, `APPLICATION FAILED TO START`를 먼저 본다. 앱이 계속 재시작되면(`restart: unless-stopped`) `ps`의 재시작 횟수와 `logs`를 확인한다.
 - 디스크: `df -h`. 백업 폴더(`backups/`)와 도커 이미지가 쌓이면 가득 찬다. 가끔 `docker image prune`.
 

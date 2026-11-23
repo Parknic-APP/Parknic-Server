@@ -1,6 +1,13 @@
 # 운영과 같은 방식(prod 프로필 + 환경변수)으로 실행하기 위한 구성
 # 실행: docker compose -f docker-compose.prod.yaml --env-file .env up -d --build
 # 구성: caddy(HTTPS 80/443) -> app(8080, 내부) -> db(5432, 내부). 자세한 절차는 docs/gcp-deploy.md
+# 컨테이너 로그가 디스크를 채우지 않게 서비스마다 10MB x 3개까지만 보관하고 오래된 것부터 지운다
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
 services:
   db:
     image: postgres:16-alpine
@@ -16,6 +23,7 @@ services:
       interval: 5s
       timeout: 3s
       retries: 10
+    logging: *default-logging
     restart: unless-stopped
 
   app:
@@ -41,6 +49,7 @@ services:
       timeout: 3s
       start_period: 40s
       retries: 5
+    logging: *default-logging
     restart: unless-stopped
 
   # HTTPS 종료 + 인증서 자동 발급/갱신. 80/443만 호스트에 연다
@@ -59,6 +68,7 @@ services:
       # 발급받은 인증서를 보존한다 (잃으면 재시작할 때마다 다시 발급해서 발급 횟수 제한에 걸릴 수 있음)
       - caddy-data:/data
       - caddy-config:/config
+    logging: *default-logging
     restart: unless-stopped
 
 volumes:
