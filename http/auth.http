@@ -113,3 +113,10 @@ Content-Type: application/json
 
 ### 로그아웃 - 토큰 없이 호출하면 401
 POST {{baseUrl}}/api/auth/logout
+
+### ── Apple 로그인 (실제 identity token) ──
+### POST /api/auth/login/apple 의 token이 "dev:"로 시작하고 개발용 로그인이 켜져 있으면 개발용 로그인(provider DEV)이고,
+### 그 외에는 Apple identity token(JWT)으로 보고 검증한다 (provider APPLE, provider_id = 토큰의 sub)
+### - 서명: Apple 공개키 목록(https://appleid.apple.com/auth/keys, RS256), iss = https://appleid.apple.com, aud = 앱 Bundle ID(parknic.apple.client-id), exp
+### - 검증에 실패하면(서명 불일치, 만료, iss/aud 불일치, JWT 형식 아님) 401 UNAUTHORIZED
+### - 진짜 Apple 토큰은 실제 기기에서 Sign in with Apple을 해야 얻을 수 있어서 .http로 재현하기 어렵다. 로컬에서는 parknic.apple.jwks-uri를 가짜 JWKS 서버로 바꿔서 확인했다

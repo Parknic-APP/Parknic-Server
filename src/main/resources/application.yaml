@@ -25,5 +25,7 @@ parknic:
     secret: ${JWT_SECRET:}
   dev-login:
     enabled: false
+  apple:
+    client-id: ${APPLE_CLIENT_ID:com.hwangsanghwan.parknic}
   checkin:
     required-seconds: 1200
