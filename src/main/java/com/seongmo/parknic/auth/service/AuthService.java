@@ -49,9 +49,6 @@ public class AuthService {
                 .orElseGet(() -> userRepository.save(
                         User.pending(identity.provider(), identity.providerId(), clock.instant())));
 
-        if (user.getStatus() == UserStatus.DELETED) {
-            user.rejoin();
-        }
         // 탈퇴할 때 Apple에 연결 해제를 요청하려면 refresh token이 필요하다. 코드 교환이 실패해도 로그인은 진행
         if (APPLE_PROVIDER.equals(identity.provider()) && StringUtils.hasText(request.authorizationCode())) {
             appleAuthClient.exchangeCode(request.authorizationCode()).ifPresent(user::updateAppleRefreshToken);
@@ -95,7 +92,7 @@ public class AuthService {
         if (current.isExpired(clock.instant())) {
             throw new BusinessException(ErrorCode.UNAUTHORIZED);
         }
-        User user = userRepository.findByIdAndStatusNot(current.getUserId(), UserStatus.DELETED)
+        User user = userRepository.findById(current.getUserId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.UNAUTHORIZED));
 
         // 거절 검사를 모두 끝낸 뒤 마지막에 "아직 안 쓴 토큰이면 쓴 것으로 바꾸기"를 한 번에 처리.

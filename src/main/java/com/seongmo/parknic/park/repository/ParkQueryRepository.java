@@ -110,10 +110,8 @@ public class ParkQueryRepository {
         return jdbcClient.sql("""
                         SELECT ROUND(AVG(r.rating), 1) AS average_rating, count(*) AS review_count
                         FROM reviews r
-                        JOIN users u ON u.id = r.user_id
                         WHERE r.park_id = :parkId
                         AND r.hidden = FALSE
-                        AND u.status <> 'DELETED'
                         """)
                 .param("parkId", parkId)
                 .query((rs, rowNum) -> {
@@ -146,9 +144,7 @@ public class ParkQueryRepository {
                         stats AS (
                             SELECT r.park_id, avg(r.rating) AS avg_rating, count(*) AS review_count
                             FROM reviews r
-                            JOIN users u ON u.id = r.user_id
                             WHERE r.hidden = FALSE
-                              AND u.status <> 'DELETED'
                               AND r.park_id IN (SELECT id FROM nearby)
                             GROUP BY r.park_id
                             HAVING count(*) >= :minReviews AND avg(r.rating) >= :minAverage
