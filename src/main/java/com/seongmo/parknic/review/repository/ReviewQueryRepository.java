@@ -32,7 +32,6 @@ public class ReviewQueryRepository {
                         WHERE r.park_id = :parkId
                         AND r.id < :cursor
                         AND r.hidden = FALSE
-                        AND u.status <> 'DELETED'
                         AND NOT EXISTS (
                             SELECT 1 FROM user_blocks ub
                                      WHERE ub.blocker_id = :viewerId AND ub.blocked_id = r.user_id

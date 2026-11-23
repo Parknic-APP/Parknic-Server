@@ -1,7 +1,6 @@
 package com.seongmo.parknic.user.service;
 
 import com.seongmo.parknic.auth.service.AppleAuthClient;
-import com.seongmo.parknic.auth.service.AuthService;
 import com.seongmo.parknic.character.repository.CharacterRepository;
 import com.seongmo.parknic.checkin.repository.BadgeRepository;
 import com.seongmo.parknic.common.error.BusinessException;
@@ -12,7 +11,6 @@ import com.seongmo.parknic.user.dto.UpdateProfileRequest;
 import com.seongmo.parknic.user.dto.UserProfileResponse;
 import com.seongmo.parknic.user.dto.UserStatsResponse;
 import com.seongmo.parknic.user.entity.User;
-import com.seongmo.parknic.user.entity.UserStatus;
 import com.seongmo.parknic.user.repository.UserBlockRepository;
 import com.seongmo.parknic.user.repository.UserRepository;
 import com.seongmo.parknic.user.repository.UserStatsQueryRepository;
@@ -35,7 +33,6 @@ public class UserService {
     private final UserRepository userRepository;
     private final CharacterRepository characterRepository;
     private final NicknameFilter nicknameFilter;
-    private final AuthService authService;
     private final AppleAuthClient appleAuthClient;
     private final UserBlockRepository userBlockRepository;
     private final BadgeRepository badgeRepository;
@@ -44,7 +41,7 @@ public class UserService {
 
     @Transactional
     public void updateProfile(Long userId, UpdateProfileRequest request) {
-        User user = userRepository.findByIdAndStatusNot(userId, UserStatus.DELETED)
+        User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.UNAUTHORIZED));
 
         if (nicknameFilter.isInappropriate(request.nickname())) {
@@ -70,7 +67,7 @@ public class UserService {
 
     @Transactional(readOnly = true)
     public UserProfileResponse getMe(Long userId) {
-        User user = userRepository.findByIdAndStatusNot(userId, UserStatus.DELETED)
+        User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.UNAUTHORIZED));
 
         String characterName = user.getCharacterId() == null
@@ -97,12 +94,15 @@ public class UserService {
 
     @Transactional
     public void withdraw(Long userId) {
-        User user = userRepository.findByIdAndStatusNot(userId, UserStatus.DELETED)
+        User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.UNAUTHORIZED));
 
         String appleRefreshToken = user.getAppleRefreshToken();
-        authService.logout(userId);
-        user.withdraw();
+
+        // 사용자 행을 실제로 지운다. users를 참조하는 외래키가 모두 ON DELETE CASCADE라서
+        // 배지, 체크인, 리뷰, 신고, 차단, 업적, 로그인 토큰이 DB에서 함께 삭제된다
+        userRepository.delete(user);
+        userRepository.flush();
 
         // 저장된 Apple 토큰이 있으면 Apple 쪽 연결도 끊는다. 실패해도 탈퇴는 그대로 진행
         if (appleRefreshToken != null) {
@@ -118,7 +118,7 @@ public class UserService {
         }
 
         // 없는 사용자, 탈퇴한 사용자는 차단 불가
-        if (!userRepository.existsByIdAndStatusNot(targetId, UserStatus.DELETED)) {
+        if (!userRepository.existsById(targetId)) {
             throw new BusinessException(ErrorCode.NOT_FOUND);
         }
 

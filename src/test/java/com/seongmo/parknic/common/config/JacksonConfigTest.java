@@ -4,7 +4,9 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import com.seongmo.parknic.user.repository.UserRepository;
 import org.springframework.context.annotation.Import;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -21,6 +23,10 @@ public class JacksonConfigTest {
 
     @Autowired
     MockMvc mockMvc;
+
+    // 웹 계층 슬라이스에는 JPA 리포지토리가 없는데, @CurrentUserId 리졸버가 사용자 존재 확인에 UserRepository를 쓴다
+    @MockitoBean
+    UserRepository userRepository;
 
     record Sample(String name, Double averageRating) {}
 

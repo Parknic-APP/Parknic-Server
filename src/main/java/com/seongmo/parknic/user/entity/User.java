@@ -62,15 +62,4 @@ public class User {
         this.appleRefreshToken = appleRefreshToken;
     }
 
-    public void withdraw() {
-        this.status = UserStatus.DELETED;
-        this.nickname = null;
-        this.appleRefreshToken = null;
-    }
-
-    public void rejoin() {
-        this.status = UserStatus.PENDING;
-        this.nickname = null;
-        this.characterId = null;
-    }
 }
