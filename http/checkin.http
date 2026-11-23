@@ -294,3 +294,10 @@ Content-Type: application/json
 {
   "pausedSeconds": 0
 }
+
+### ── 완료 응답의 weeklyRanking ──
+### 체크인 완료 응답의 weeklyRanking은 이번 주(월~일, KST) 이 공원 랭킹으로 계산한다. 위의 완료 시나리오 응답에서 확인한다
+### - rank, badgeCount: 방금 받은 배지를 포함한 내 순위와 배지 개수. GET /api/parks/{id}/rankings 의 me와 같다
+### - rankChange: 이번 배지로 오른 순위 수(이번 주 첫 배지면 0)
+### - badgesToPodium: 3위 안이면 0, 아니면 (3위 개수 - 내 개수 + 1)
+### - 다른 공원의 배지와 지난 주 배지는 계산에 들어가지 않는다
