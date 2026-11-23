@@ -15,6 +15,7 @@ import com.seongmo.parknic.common.geo.GeoDistance;
 import com.seongmo.parknic.common.time.Kst;
 import com.seongmo.parknic.park.entity.Park;
 import com.seongmo.parknic.park.repository.ParkRepository;
+import com.seongmo.parknic.park.service.ParkVisibility;
 import com.seongmo.parknic.ranking.dto.MyRankingResponse;
 import com.seongmo.parknic.ranking.dto.WeeklyStanding;
 import com.seongmo.parknic.ranking.service.RankingService;
@@ -45,11 +46,13 @@ public class CheckinService {
     private final CheckinProperties checkinProperties;
     private final RankingService rankingService;
     private final AchievementService achievementService;
+    private final ParkVisibility parkVisibility;
     private final Clock clock;
 
     @Transactional
     public CheckinSessionResponse start(Long userId, StartCheckinRequest request) {
         Park park = parkRepository.findById(request.parkId())
+                .filter(parkVisibility::isVisible)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
 
         double distance = GeoDistance.meters(

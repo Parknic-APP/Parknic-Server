@@ -1,0 +1,26 @@
+### 심사용 공원(REVIEW_MODE): 서버를 두 가지 모드로 띄워서 확인한다. 운영 가이드는 docs/review-mode.md
+### 사전 준비: parks에 review_only=true인 공원을 하나 넣는다 (예: id 100, 쿠퍼티노 37.3349, -122.0090). auth.http에서 token1을 만든다
+
+### REVIEW_MODE 꺼짐(기본) -> 200, parks []
+### 켜짐(REVIEW_MODE=true로 재시작) -> 200, 심사용 공원이 포함됨
+GET {{baseUrl}}/api/parks/nearby?lat=37.3349&lng=-122.0090&radius=2000
+Authorization: Bearer {{token1}}
+
+### 심사용 공원 상세: 꺼짐 -> 404 NOT_FOUND / 켜짐 -> 200
+GET {{baseUrl}}/api/parks/100
+Authorization: Bearer {{token1}}
+
+### 심사용 공원 체크인 시작: 꺼짐 -> 404 NOT_FOUND / 켜짐 -> 200
+POST {{baseUrl}}/api/check-ins
+Content-Type: application/json
+Authorization: Bearer {{token1}}
+
+{
+  "parkId": 100,
+  "lat": 37.3349,
+  "lng": -122.0090
+}
+
+### 리뷰 좋은 공원: 켜짐이어도 심사용 공원은 제외 -> 200
+GET {{baseUrl}}/api/parks/top-rated?lat=37.3349&lng=-122.0090
+Authorization: Bearer {{token1}}
