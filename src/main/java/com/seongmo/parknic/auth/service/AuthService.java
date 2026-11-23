@@ -15,6 +15,7 @@ import com.seongmo.parknic.user.entity.UserStatus;
 import com.seongmo.parknic.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
@@ -38,6 +39,7 @@ public class AuthService {
     private final RefreshTokenGenerator refreshTokenGenerator;
     private final RefreshTokenRepository refreshTokenRepository;
     private final AppleTokenVerifier appleTokenVerifier;
+    private final AppleAuthClient appleAuthClient;
 
     @Transactional
     public LoginResponse loginApple(LoginRequest request) {
@@ -49,6 +51,10 @@ public class AuthService {
 
         if (user.getStatus() == UserStatus.DELETED) {
             user.rejoin();
+        }
+        // 탈퇴할 때 Apple에 연결 해제를 요청하려면 refresh token이 필요하다. 코드 교환이 실패해도 로그인은 진행
+        if (APPLE_PROVIDER.equals(identity.provider()) && StringUtils.hasText(request.authorizationCode())) {
+            appleAuthClient.exchangeCode(request.authorizationCode()).ifPresent(user::updateAppleRefreshToken);
         }
         String accessToken = accessTokenService.issue(user.getId());
         String refreshToken = issueRefreshToken(user.getId(), UUID.randomUUID());
