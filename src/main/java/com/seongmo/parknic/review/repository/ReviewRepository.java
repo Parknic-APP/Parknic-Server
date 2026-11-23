@@ -14,6 +14,8 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
 
     boolean existsByUserIdAndParkId(Long userId, Long parkId);
 
+    long countByUserIdAndHiddenFalse(Long userId);
+
     Optional<Review> findByIdAndUserIdAndHiddenFalse(Long id, Long userId);
 
     @Modifying

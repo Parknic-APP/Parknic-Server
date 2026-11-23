@@ -1,6 +1,7 @@
 package com.seongmo.parknic.review.repository;
 
 import com.seongmo.parknic.common.time.Kst;
+import com.seongmo.parknic.review.dto.MyReviewItemResponse;
 import com.seongmo.parknic.review.dto.ReviewItemResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.simple.JdbcClient;
@@ -53,6 +54,31 @@ public class ReviewQueryRepository {
                         rs.getString("content"),
                         Kst.format(rs.getObject("created_at", OffsetDateTime.class).toInstant()),
                         rs.getLong("user_id") == viewerId))
+                .list();
+    }
+
+    // 내가 쓴 리뷰를 최신순으로. 숨겨진 리뷰는 제외
+    public List<MyReviewItemResponse> findByUser(Long userId, long cursor, int limit) {
+        return jdbcClient.sql("""
+                        SELECT r.id, r.park_id, p.name AS park_name, r.rating, r.content, r.created_at
+                        FROM reviews r
+                        JOIN parks p ON p.id = r.park_id
+                        WHERE r.user_id = :userId
+                          AND r.id < :cursor
+                          AND r.hidden = FALSE
+                        ORDER BY r.id DESC
+                        LIMIT :limit
+                        """)
+                .param("userId", userId)
+                .param("cursor", cursor)
+                .param("limit", limit)
+                .query((rs, rowNum) -> new MyReviewItemResponse(
+                        rs.getLong("id"),
+                        rs.getLong("park_id"),
+                        rs.getString("park_name"),
+                        rs.getInt("rating"),
+                        rs.getString("content"),
+                        Kst.format(rs.getObject("created_at", OffsetDateTime.class).toInstant())))
                 .list();
     }
 }
