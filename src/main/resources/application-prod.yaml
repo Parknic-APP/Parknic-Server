@@ -3,3 +3,15 @@ spring:
     url: ${DB_URL}
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
+
+server:
+  # TLS를 끝내는 리버스 프록시(Nginx, Caddy 등) 뒤에서 도는 것을 가정
+  forward-headers-strategy: framework
+
+parknic:
+  dev-login:
+    enabled: false
+
+logging:
+  level:
+    root: INFO
